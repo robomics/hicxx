@@ -176,3 +176,7 @@ inline GenomicCoordinates GenomicCoordinates::fromString(std::string coord, bool
     }
     return gc;
 }
+
+inline std::size_t HiCFile::numCachedFooters() const noexcept { return _footers.size(); }
+
+inline void HiCFile::purgeFooterCache() { _footers.clear(); }

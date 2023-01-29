@@ -307,6 +307,9 @@ class HiCFile {
                                                MatrixType matrixType, NormalizationMethod norm,
                                                MatrixUnit unit, std::int32_t resolution);
 
+    std::size_t numCachedFooters() const noexcept;
+    void purgeFooterCache();
+
    private:
     std::shared_ptr<const internal::HiCFooter> getFooter(std::int32_t chromId1,
                                                          std::int32_t chromId2,
