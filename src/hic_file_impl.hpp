@@ -121,10 +121,9 @@ inline internal::MatrixZoomData HiCFile::getMatrixZoomData(
                         matrixType, norm));
     }
 
-    const auto it =
-        std::find(_fs->header().resolutions.begin(), _fs->header().resolutions.end(), resolution);
-    if (it == _fs->header().resolutions.end()) {
-        std::runtime_error(fmt::format(
+    const auto it = std::find(resolutions().begin(), resolutions().end(), resolution);
+    if (it == resolutions().end()) {
+        throw std::runtime_error(fmt::format(
             FMT_STRING(
                 "matrix does not have interactions for resolution {}. Available resolutions: {}"),
             resolution, fmt::join(_fs->header().resolutions, ", ")));
