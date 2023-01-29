@@ -24,10 +24,10 @@
 #include <fmt/compile.h>
 #include <fmt/format.h>
 
-#include <cassert>
 #include <cstdint>
+#include <stdexcept>
 #include <string>
-#include <utility>
+#include <vector>
 
 #include "straw/straw.h"
 
@@ -35,16 +35,6 @@ struct GenomicCoord {
     std::string chrom{};
     std::int32_t start{};
     std::int32_t end{};
-
-    GenomicCoord(std::string chrom_, std::int32_t start_, std::int32_t end_)
-        : chrom(std::move(chrom_)), start(start_), end(end_) {
-        if (start >= end) {
-            throw std::runtime_error(fmt::format(
-                FMT_STRING("invalid coordinate {}:{}-{}: start position >= end position"), chrom,
-                start, end));
-        }
-        assert(start <= end);
-    }
 
     explicit GenomicCoord(const std::string& coord) {
         auto pos = coord.find(':');
@@ -79,16 +69,26 @@ struct GenomicCoord {
     }
 };
 
-int main(int argc, char** argv) {
-    if (argc != 7 && argc != 8) {
-        fmt::print(
-            stderr,
-            FMT_STRING("Incorrect arguments\n"
-                       "Usage: straw [observed/oe/expected] <NONE/VC/VC_SQRT/KR> <hicFile(s)> "
-                       "<chr1>[:x1:x2] <chr2>[:y1:y2] <BP/FRAG> <binsize>\n"));
-        return 1;
+static std::int32_t getChromSize(const HiCFile& hic, const std::string& chrom_name) {
+    auto it = hic.chromosomes().find(chrom_name);
+    if (it == hic.chromosomes().end()) {
+        throw std::runtime_error(
+            fmt::format(FMT_STRING("Unable to find a chromosome named \"{}\""), chrom_name));
     }
+    return it->second.length;
+}
+
+int main(int argc, char** argv) noexcept {
     try {
+        if (argc != 7 && argc != 8) {
+            fmt::print(
+                stderr,
+                FMT_STRING("Incorrect arguments\n"
+                           "Usage: straw [observed/oe/expected] <NONE/VC/VC_SQRT/KR> <hicFile(s)> "
+                           "<chr1>[:x1:x2] <chr2>[:y1:y2] <BP/FRAG> <binsize>\n"));
+            return 1;
+        }
+
         auto matrixType = MatrixType::observed;
         auto* args = argv + 1;
         if (argc == 8) {
@@ -101,33 +101,24 @@ int main(int argc, char** argv) {
         const auto unit = ParseUnitStr(*args++);
         const auto resolution = std::stoi(*args++);
 
-        HiCFile f(url);
+        HiCFile hic(url);
 
         if (coord1.end == 0) {
-            coord1.end = f.chromosomes().at(coord1.chrom).length;
+            coord1.end = getChromSize(hic, coord1.chrom);
         }
         if (coord2.end == 0) {
-            coord2.end = f.chromosomes().at(coord2.chrom).length;
+            coord2.end = getChromSize(hic, coord2.chrom);
         }
 
         auto selector =
-            f.getMatrixZoomData(coord1.chrom, coord2.chrom, matrixType, norm, unit, resolution);
+            hic.getMatrixZoomData(coord1.chrom, coord2.chrom, matrixType, norm, unit, resolution);
         std::vector<contactRecord> buffer{};
         selector.fetch(coord1.start, coord1.end, coord2.start, coord2.end, buffer);
 
-        const auto chrom1 = f.chromosomes().at(coord1.chrom);
-        const auto chrom2 = f.chromosomes().at(coord2.chrom);
-
         for (const auto& record : buffer) {
             const auto start1 = record.binX * resolution;
-            const auto end1 =
-                std::min(start1 + resolution, static_cast<std::int32_t>(chrom1.length));
             const auto start2 = record.binY * resolution;
-            const auto end2 =
-                std::min(start2 + resolution, static_cast<std::int32_t>(chrom2.length));
             fmt::print(FMT_COMPILE("{}\t{}\t{}\n"), start1, start2, record.counts);
-            // fmt::print(FMT_COMPILE("{:s}\t{:d}\t{:d}\t{:s}\t{:d}\t{:d}\t{:g}\n"), chrom1.name,
-            //            start1, end1, chrom2.name, start2, end2, record.counts);
         }
     }
 
@@ -137,6 +128,9 @@ int main(int argc, char** argv) {
             stderr,
             FMT_STRING("straw encountered the following error while processing file \"{}\": {}\n"),
             url, e.what());
+        return 1;
+    } catch (...) {
+        fmt::print(stderr, FMT_STRING("straw encountered an unknown error!\n"));
         return 1;
     }
 }
