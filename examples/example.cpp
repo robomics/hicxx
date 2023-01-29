@@ -31,44 +31,6 @@
 
 #include "straw/straw.h"
 
-struct GenomicCoord {
-    std::string chrom{};
-    std::int32_t start{};
-    std::int32_t end{};
-
-    explicit GenomicCoord(const std::string& coord) {
-        auto pos = coord.find(':');
-        if (pos == std::string::npos) {
-            chrom = coord;
-            return;
-        }
-
-        chrom = coord.substr(0, pos);
-        const auto coord_ = coord.substr(pos + 1);
-
-        pos = coord_.find('-');
-        if (pos == std::string::npos) {
-            pos = coord_.find(':');
-        }
-        if (pos == std::string::npos) {
-            throw std::runtime_error(
-                fmt::format(FMT_STRING("unable to parse coordinate \"{}\""), coord));
-        }
-
-        try {
-            start = std::stoi(coord_.substr(0, pos));
-            end = std::stoi(coord_.substr(pos + 1));
-            if (start >= end) {
-                throw std::runtime_error(fmt::format(
-                    FMT_STRING("invalid coordinate {}: start position >= end position"), coord));
-            }
-        } catch (const std::exception& e) {
-            throw std::runtime_error(
-                fmt::format(FMT_STRING("unable to parse coordinate \"{}\": {}"), coord, e.what()));
-        }
-    }
-};
-
 static std::int32_t getChromSize(const HiCFile& hic, const std::string& chrom_name) {
     auto it = hic.chromosomes().find(chrom_name);
     if (it == hic.chromosomes().end()) {
@@ -96,8 +58,8 @@ int main(int argc, char** argv) noexcept {
         }
         const auto norm = ParseNormStr(*args++);
         const std::string url(*args++);
-        GenomicCoord coord1(*args++);
-        GenomicCoord coord2(*args++);
+        auto coord1 = GenomicCoordinates::fromString(*args++);
+        auto coord2 = GenomicCoordinates::fromString(*args++);
         const auto unit = ParseUnitStr(*args++);
         const auto resolution = std::stoi(*args++);
 
