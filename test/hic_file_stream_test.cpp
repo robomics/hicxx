@@ -61,6 +61,8 @@ TEST_CASE("readHeader (v9)", "[v9]") {
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("readFooter (v8)", "[v8]") {
     internal::HiCFileStream s(urlv8);
+    const auto chr2L = s.header().chromosomes.at("chr2L");
+    const auto chr2R = s.header().chromosomes.at("chr2R");
     // first 5 expected values
     constexpr std::array<double, 5> expected1{864.6735714977542, 620.9907283534235,
                                               311.1254999778368, 203.9822974509631,
@@ -71,125 +73,112 @@ TEST_CASE("readFooter (v8)", "[v8]") {
                                               0.008417076032024847};
 
     SECTION("observed NONE BP 5000") {
-        const auto f =
-            s.readFooter("chr2L", MatrixType::observed, Normalization::NONE, Unit::BP, 5000);
+        const auto f = s.readFooter(chr2L.index, chr2L.index, MatrixType::observed,
+                                    NormalizationMethod::NONE, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType == MatrixType::observed);
-        CHECK(f.normalization == Normalization::NONE);
-        CHECK(f.unit == Unit::BP);
-        CHECK(f.resolution == 5000);
-        CHECK(f.fileOffset == 340697);
-        CHECK(f.c1NormEntry.position == -1);
-        CHECK(f.c1NormEntry.size == -1);
-        CHECK(f.c2NormEntry.position == -1);
-        CHECK(f.c2NormEntry.size == -1);
-        CHECK(f.expectedValues.empty());
+        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.normalization() == NormalizationMethod::NONE);
+        CHECK(f.unit() == MatrixUnit::BP);
+        CHECK(f.resolution() == 5000);
+        CHECK(f.fileOffset() == 340697);
+        CHECK(f.c1Norm().empty());
+        CHECK(f.c2Norm().empty());
+        CHECK(f.expectedValues().empty());
     }
 
     SECTION("observed VC BP 5000") {
-        const auto f =
-            s.readFooter("chr2L", "chr2R", MatrixType::observed, Normalization::VC, Unit::BP, 5000);
+        const auto f = s.readFooter(chr2L.index, chr2R.index, MatrixType::observed,
+                                    NormalizationMethod::VC, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType == MatrixType::observed);
-        CHECK(f.normalization == Normalization::VC);
-        CHECK(f.unit == Unit::BP);
-        CHECK(f.resolution == 5000);
-        CHECK(f.fileOffset == 11389664);
-        CHECK(f.c1NormEntry.position == 134081028);
-        CHECK(f.c1NormEntry.size == 37644);
-        CHECK(f.c2NormEntry.position == 134231604);
-        CHECK(f.c2NormEntry.size == 40516);
-        CHECK(f.expectedValues.empty());
+        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.normalization() == NormalizationMethod::VC);
+        CHECK(f.unit() == MatrixUnit::BP);
+        CHECK(f.resolution() == 5000);
+        CHECK(f.fileOffset() == 11389664);
+        CHECK(f.c1Norm().size() == 4705);
+        CHECK(f.c2Norm().size() == 5064);
+        CHECK(f.expectedValues().empty());
     }
 
     SECTION("observed VC_SQRT BP 5000") {
-        const auto f = s.readFooter("chr2L", "chr2R", MatrixType::observed, Normalization::VC_SQRT,
-                                    Unit::BP, 5000);
+        const auto f = s.readFooter(chr2L.index, chr2R.index, MatrixType::observed,
+                                    NormalizationMethod::VC_SQRT, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType == MatrixType::observed);
-        CHECK(f.normalization == Normalization::VC_SQRT);
-        CHECK(f.unit == Unit::BP);
-        CHECK(f.resolution == 5000);
-        CHECK(f.fileOffset == 11389664);
-        CHECK(f.c1NormEntry.position == 134118672);
-        CHECK(f.c1NormEntry.size == 37644);
-        CHECK(f.c2NormEntry.position == 134272120);
-        CHECK(f.c2NormEntry.size == 40516);
-        CHECK(f.expectedValues.empty());
+        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.normalization() == NormalizationMethod::VC_SQRT);
+        CHECK(f.unit() == MatrixUnit::BP);
+        CHECK(f.resolution() == 5000);
+        CHECK(f.fileOffset() == 11389664);
+        CHECK(f.c1Norm().size() == 4705);
+        CHECK(f.c2Norm().size() == 5064);
+        CHECK(f.expectedValues().empty());
     }
 
     SECTION("observed KR BP 5000") {
-        const auto f =
-            s.readFooter("chr2L", "chr2R", MatrixType::observed, Normalization::KR, Unit::BP, 5000);
+        const auto f = s.readFooter(chr2L.index, chr2R.index, MatrixType::observed,
+                                    NormalizationMethod::KR, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType == MatrixType::observed);
-        CHECK(f.normalization == Normalization::KR);
-        CHECK(f.unit == Unit::BP);
-        CHECK(f.resolution == 5000);
-        CHECK(f.fileOffset == 11389664);
-        CHECK(f.c1NormEntry.position == 134156316);
-        CHECK(f.c1NormEntry.size == 37644);
-        CHECK(f.c2NormEntry.position == 134312636);
-        CHECK(f.c2NormEntry.size == 40516);
-        CHECK(f.expectedValues.empty());
+        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.normalization() == NormalizationMethod::KR);
+        CHECK(f.unit() == MatrixUnit::BP);
+        CHECK(f.resolution() == 5000);
+        CHECK(f.fileOffset() == 11389664);
+        CHECK(f.c1Norm().size() == 4705);
+        CHECK(f.c2Norm().size() == 5064);
+        CHECK(f.expectedValues().empty());
     }
 
     SECTION("observed SCALE BP 5000") {
-        const auto f = s.readFooter("chr2L", "chr2R", MatrixType::observed, Normalization::SCALE,
-                                    Unit::BP, 5000);
+        const auto f = s.readFooter(chr2L.index, chr2R.index, MatrixType::observed,
+                                    NormalizationMethod::SCALE, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType == MatrixType::observed);
-        CHECK(f.normalization == Normalization::SCALE);
-        CHECK(f.unit == Unit::BP);
-        CHECK(f.resolution == 5000);
-        CHECK(f.fileOffset == 11389664);
-        CHECK(f.c1NormEntry.position == 134193960);
-        CHECK(f.c1NormEntry.size == 37644);
-        CHECK(f.c2NormEntry.position == 134353152);
-        CHECK(f.c2NormEntry.size == 40516);
-        CHECK(f.expectedValues.empty());
+        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.normalization() == NormalizationMethod::SCALE);
+        CHECK(f.unit() == MatrixUnit::BP);
+        CHECK(f.resolution() == 5000);
+        CHECK(f.fileOffset() == 11389664);
+        CHECK(f.c1Norm().size() == 4705);
+        CHECK(f.c2Norm().size() == 5064);
+        CHECK(f.expectedValues().empty());
     }
 
     SECTION("oe NONE BP 5000") {
-        const auto f = s.readFooter("chr2L", MatrixType::oe, Normalization::NONE, Unit::BP, 5000);
+        const auto f = s.readFooter(chr2L.index, chr2L.index, MatrixType::oe,
+                                    NormalizationMethod::NONE, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType == MatrixType::oe);
-        CHECK(f.normalization == Normalization::NONE);
-        CHECK(f.unit == Unit::BP);
-        CHECK(f.resolution == 5000);
-        CHECK(f.fileOffset == 340697);
-        CHECK(f.c1NormEntry.position == -1);
-        CHECK(f.c1NormEntry.size == -1);
-        CHECK(f.c2NormEntry.position == -1);
-        CHECK(f.c2NormEntry.size == -1);
-        REQUIRE(f.expectedValues.size() == 6415);
+        CHECK(f.matrixType() == MatrixType::oe);
+        CHECK(f.normalization() == NormalizationMethod::NONE);
+        CHECK(f.unit() == MatrixUnit::BP);
+        CHECK(f.resolution() == 5000);
+        CHECK(f.fileOffset() == 340697);
+        CHECK(f.c1Norm().empty());
+        CHECK(f.c2Norm().empty());
+        REQUIRE(f.expectedValues().size() == 6415);
 
         for (std::size_t i = 0; i < expected1.size(); ++i) {
-            const auto j = f.expectedValues.size() - (expected2.size() - i);
-            CHECK_THAT(expected1[i], Catch::Matchers::WithinRel(f.expectedValues[i]));
-            CHECK_THAT(expected2[i], Catch::Matchers::WithinRel(f.expectedValues[j]));
+            const auto j = f.expectedValues().size() - (expected2.size() - i);
+            CHECK_THAT(expected1[i], Catch::Matchers::WithinRel(f.expectedValues()[i]));
+            CHECK_THAT(expected2[i], Catch::Matchers::WithinRel(f.expectedValues()[j]));
         }
     }
 
     SECTION("expected NONE BP 5000") {
-        const auto f =
-            s.readFooter("chr2L", MatrixType::expected, Normalization::NONE, Unit::BP, 5000);
+        const auto f = s.readFooter(chr2L.index, chr2L.index, MatrixType::expected,
+                                    NormalizationMethod::NONE, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType == MatrixType::expected);
-        CHECK(f.normalization == Normalization::NONE);
-        CHECK(f.unit == Unit::BP);
-        CHECK(f.resolution == 5000);
-        CHECK(f.fileOffset == 340697);
-        CHECK(f.c1NormEntry.position == -1);
-        CHECK(f.c1NormEntry.size == -1);
-        CHECK(f.c2NormEntry.position == -1);
-        CHECK(f.c2NormEntry.size == -1);
-        REQUIRE(f.expectedValues.size() == 6415);
+        CHECK(f.matrixType() == MatrixType::expected);
+        CHECK(f.normalization() == NormalizationMethod::NONE);
+        CHECK(f.unit() == MatrixUnit::BP);
+        CHECK(f.resolution() == 5000);
+        CHECK(f.fileOffset() == 340697);
+        CHECK(f.c1Norm().empty());
+        CHECK(f.c2Norm().empty());
+        REQUIRE(f.expectedValues().size() == 6415);
 
         for (std::size_t i = 0; i < expected1.size(); ++i) {
-            const auto j = f.expectedValues.size() - (expected2.size() - i);
-            CHECK_THAT(expected1[i], Catch::Matchers::WithinRel(f.expectedValues[i]));
-            CHECK_THAT(expected2[i], Catch::Matchers::WithinRel(f.expectedValues[j]));
+            const auto j = f.expectedValues().size() - (expected2.size() - i);
+            CHECK_THAT(expected1[i], Catch::Matchers::WithinRel(f.expectedValues()[i]));
+            CHECK_THAT(expected2[i], Catch::Matchers::WithinRel(f.expectedValues()[j]));
         }
     }
 }
@@ -197,6 +186,8 @@ TEST_CASE("readFooter (v8)", "[v8]") {
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("readFooter (v9)", "[v9]") {
     internal::HiCFileStream s(urlv9);
+    const auto chr2L = s.header().chromosomes.at("chr2L");
+    const auto chr2R = s.header().chromosomes.at("chr2R");
     // first 5 expected values
     constexpr std::array<double, 5> expected1{864.6735708339686, 620.990715491172,
                                               311.1255023627755, 203.9822882714327,
@@ -207,126 +198,113 @@ TEST_CASE("readFooter (v9)", "[v9]") {
                                               0.008417075820557469};
 
     SECTION("observed NONE BP 5000") {
-        const auto f =
-            s.readFooter("chr2L", MatrixType::observed, Normalization::NONE, Unit::BP, 5000);
+        const auto f = s.readFooter(chr2L.index, chr2L.index, MatrixType::observed,
+                                    NormalizationMethod::NONE, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType == MatrixType::observed);
-        CHECK(f.normalization == Normalization::NONE);
-        CHECK(f.unit == Unit::BP);
-        CHECK(f.resolution == 5000);
-        CHECK(f.fileOffset == 340696);
-        CHECK(f.c1NormEntry.position == -1);
-        CHECK(f.c1NormEntry.size == -1);
-        CHECK(f.c2NormEntry.position == -1);
-        CHECK(f.c2NormEntry.size == -1);
-        CHECK(f.expectedValues.empty());
+        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.normalization() == NormalizationMethod::NONE);
+        CHECK(f.unit() == MatrixUnit::BP);
+        CHECK(f.resolution() == 5000);
+        CHECK(f.fileOffset() == 340696);
+        CHECK(f.c1Norm().empty());
+        CHECK(f.c2Norm().empty());
+        CHECK(f.expectedValues().empty());
     }
 
     SECTION("observed VC BP 5000") {
-        const auto f =
-            s.readFooter("chr2L", "chr2R", MatrixType::observed, Normalization::VC, Unit::BP, 5000);
+        const auto f = s.readFooter(chr2L.index, chr2R.index, MatrixType::observed,
+                                    NormalizationMethod::VC, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType == MatrixType::observed);
-        CHECK(f.normalization == Normalization::VC);
-        CHECK(f.unit == Unit::BP);
-        CHECK(f.resolution == 5000);
-        CHECK(f.fileOffset == 11625116);
-        CHECK(f.c1NormEntry.position == 131715708);
-        CHECK(f.c1NormEntry.size == 18820);
-        CHECK(f.c2NormEntry.position == 131772168);
-        CHECK(f.c2NormEntry.size == 20240);
-        CHECK(f.expectedValues.empty());
+        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.normalization() == NormalizationMethod::VC);
+        CHECK(f.unit() == MatrixUnit::BP);
+        CHECK(f.resolution() == 5000);
+        CHECK(f.fileOffset() == 11625116);
+        CHECK(f.c1Norm().size() == 4703);
+        CHECK(f.c2Norm().size() == 5058);
+        CHECK(f.expectedValues().empty());
     }
 
     SECTION("observed VC_SQRT BP 5000") {
-        const auto f = s.readFooter("chr2L", "chr2R", MatrixType::observed, Normalization::VC_SQRT,
-                                    Unit::BP, 5000);
+        const auto f = s.readFooter(chr2L.index, chr2R.index, MatrixType::observed,
+                                    NormalizationMethod::VC_SQRT, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType == MatrixType::observed);
-        CHECK(f.normalization == Normalization::VC_SQRT);
-        CHECK(f.unit == Unit::BP);
-        CHECK(f.resolution == 5000);
-        CHECK(f.fileOffset == 11625116);
-        CHECK(f.c1NormEntry.position == 131734528);
-        CHECK(f.c1NormEntry.size == 18820);
-        CHECK(f.c2NormEntry.position == 131792408);
-        CHECK(f.c2NormEntry.size == 20240);
-        CHECK(f.expectedValues.empty());
+        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.normalization() == NormalizationMethod::VC_SQRT);
+        CHECK(f.unit() == MatrixUnit::BP);
+        CHECK(f.resolution() == 5000);
+        CHECK(f.fileOffset() == 11625116);
+        CHECK(f.c1Norm().size() == 4703);
+        CHECK(f.c2Norm().size() == 5058);
+        CHECK(f.expectedValues().empty());
     }
 
     /*  TODO: for some reason KR normalization is missing
     SECTION("observed KR BP 5000") {
-        const auto f = s.readFooter("chr2L", "chr2R", MatrixType::observed, Normalization::KR,
-                                    Unit::BP, 5000);
+        const auto f = s.readFooter(chr2L.index, chr2R.index, MatrixType::observed,
+    NormalizationMethod::KR, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType == MatrixType::observed);
-        CHECK(f.normalization == Normalization::KR);
-        CHECK(f.unit == Unit::BP);
-        CHECK(f.resolution == 5000);
-        CHECK(f.fileOffset == 11625116);
-        CHECK(f.c1NormEntry.position == -1);  // TODO
-        CHECK(f.c1NormEntry.size == -1);      // TODO
-        CHECK(f.c2NormEntry.position == -1);  // TODO
-        CHECK(f.c2NormEntry.size == -1);      // TODO
-        CHECK(f.expectedValues.empty());
+        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.normalization() == NormalizationMethod::KR);
+        CHECK(f.unit() == MatrixUnit::BP);
+        CHECK(f.resolution() == 5000);
+        CHECK(f.fileOffset() == 11625116);
+        CHECK(f.c1Norm().size() == 4703);
+        CHECK(f.c2Norm().size() == 5058);
+        CHECK(f._expectedValues().empty());
     } */
 
     SECTION("observed SCALE BP 5000") {
-        const auto f = s.readFooter("chr2L", "chr2R", MatrixType::observed, Normalization::SCALE,
-                                    Unit::BP, 5000);
+        const auto f = s.readFooter(chr2L.index, chr2R.index, MatrixType::observed,
+                                    NormalizationMethod::SCALE, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType == MatrixType::observed);
-        CHECK(f.normalization == Normalization::SCALE);
-        CHECK(f.unit == Unit::BP);
-        CHECK(f.resolution == 5000);
-        CHECK(f.fileOffset == 11625116);
-        CHECK(f.c1NormEntry.position == 131753348);
-        CHECK(f.c1NormEntry.size == 18820);
-        CHECK(f.c2NormEntry.position == 131812648);
-        CHECK(f.c2NormEntry.size == 20240);
-        CHECK(f.expectedValues.empty());
+        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.normalization() == NormalizationMethod::SCALE);
+        CHECK(f.unit() == MatrixUnit::BP);
+        CHECK(f.resolution() == 5000);
+        CHECK(f.fileOffset() == 11625116);
+        CHECK(f.c1Norm().size() == 4703);
+        CHECK(f.c2Norm().size() == 5058);
+        CHECK(f.expectedValues().empty());
     }
 
     SECTION("oe NONE BP 5000") {
-        const auto f = s.readFooter("chr2L", MatrixType::oe, Normalization::NONE, Unit::BP, 5000);
+        const auto f = s.readFooter(chr2L.index, chr2L.index, MatrixType::oe,
+                                    NormalizationMethod::NONE, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType == MatrixType::oe);
-        CHECK(f.normalization == Normalization::NONE);
-        CHECK(f.unit == Unit::BP);
-        CHECK(f.resolution == 5000);
-        CHECK(f.fileOffset == 340696);
-        CHECK(f.c1NormEntry.position == -1);
-        CHECK(f.c1NormEntry.size == -1);
-        CHECK(f.c2NormEntry.position == -1);
-        CHECK(f.c2NormEntry.size == -1);
-        REQUIRE(f.expectedValues.size() == 6415);
+        CHECK(f.matrixType() == MatrixType::oe);
+        CHECK(f.normalization() == NormalizationMethod::NONE);
+        CHECK(f.unit() == MatrixUnit::BP);
+        CHECK(f.resolution() == 5000);
+        CHECK(f.fileOffset() == 340696);
+        CHECK(f.c1Norm().empty());
+        CHECK(f.c2Norm().empty());
+        REQUIRE(f.expectedValues().size() == 6415);
 
         for (std::size_t i = 0; i < expected1.size(); ++i) {
-            const auto j = f.expectedValues.size() - (expected2.size() - i);
-            CHECK_THAT(expected1[i], Catch::Matchers::WithinRel(f.expectedValues[i]));
-            CHECK_THAT(expected2[i], Catch::Matchers::WithinRel(f.expectedValues[j]));
+            const auto j = f.expectedValues().size() - (expected2.size() - i);
+            CHECK_THAT(expected1[i], Catch::Matchers::WithinRel(f.expectedValues()[i]));
+            CHECK_THAT(expected2[i], Catch::Matchers::WithinRel(f.expectedValues()[j]));
         }
     }
 
     SECTION("expected NONE BP 5000") {
-        const auto f =
-            s.readFooter("chr2L", MatrixType::expected, Normalization::NONE, Unit::BP, 5000);
+        const auto f = s.readFooter(chr2L.index, chr2L.index, MatrixType::expected,
+                                    NormalizationMethod::NONE, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType == MatrixType::expected);
-        CHECK(f.normalization == Normalization::NONE);
-        CHECK(f.unit == Unit::BP);
-        CHECK(f.resolution == 5000);
-        CHECK(f.fileOffset == 340696);
-        CHECK(f.c1NormEntry.position == -1);
-        CHECK(f.c1NormEntry.size == -1);
-        CHECK(f.c2NormEntry.position == -1);
-        CHECK(f.c2NormEntry.size == -1);
-        REQUIRE(f.expectedValues.size() == 6415);
+        CHECK(f.matrixType() == MatrixType::expected);
+        CHECK(f.normalization() == NormalizationMethod::NONE);
+        CHECK(f.unit() == MatrixUnit::BP);
+        CHECK(f.resolution() == 5000);
+        CHECK(f.fileOffset() == 340696);
+        CHECK(f.c1Norm().empty());
+        CHECK(f.c2Norm().empty());
+        REQUIRE(f.expectedValues().size() == 6415);
 
         for (std::size_t i = 0; i < expected1.size(); ++i) {
-            const auto j = f.expectedValues.size() - (expected2.size() - i);
-            CHECK_THAT(expected1[i], Catch::Matchers::WithinRel(f.expectedValues[i]));
-            CHECK_THAT(expected2[i], Catch::Matchers::WithinRel(f.expectedValues[j]));
+            const auto j = f.expectedValues().size() - (expected2.size() - i);
+            CHECK_THAT(expected1[i], Catch::Matchers::WithinRel(f.expectedValues()[i]));
+            CHECK_THAT(expected2[i], Catch::Matchers::WithinRel(f.expectedValues()[j]));
         }
     }
 }

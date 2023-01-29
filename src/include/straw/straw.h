@@ -4,12 +4,14 @@
 
 #pragma once
 
+#include <zlib.h>
+
 #include <cstdint>
 #include <filestream/filestream.hpp>
 #include <memory>
 #include <set>
 #include <string>
-#include <unordered_set>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -33,22 +35,58 @@ struct HiCHeader {
 
     std::int32_t nChromosomes() const noexcept;
     std::int32_t nResolutions() const noexcept;
+
+    const chromosome &getChromosome(std::int32_t id) const noexcept;
 };
 
-struct HiCFooter {
+struct HiCFooterMetadata {
     std::string url{};
     MatrixType matrixType{MatrixType::observed};
-    Normalization normalization{Normalization::NONE};
-    Unit unit{Unit::BP};
+    NormalizationMethod normalization{NormalizationMethod::NONE};
+    MatrixUnit unit{MatrixUnit::BP};
     std::int32_t resolution{-1};
+    chromosome chrom1{};
+    chromosome chrom2{};
     std::int64_t fileOffset{-1};
-    indexEntry c1NormEntry{-1, -1};
-    indexEntry c2NormEntry{-1, -1};
-    std::vector<double> expectedValues{};
+
+    constexpr explicit operator bool() const noexcept;
+    bool operator==(const HiCFooterMetadata &other) const noexcept;
+    bool operator!=(const HiCFooterMetadata &other) const noexcept;
+};
+
+class HiCFooter {
+    HiCFooterMetadata _metadata{};
+    std::vector<double> _expectedValues{};
+    std::vector<double> _c1Norm{};
+    std::vector<double> _c2Norm{};
+
+   public:
+    HiCFooter() = default;
+    explicit HiCFooter(HiCFooterMetadata metadata_) noexcept;
 
     constexpr explicit operator bool() const noexcept;
     bool operator==(const HiCFooter &other) const noexcept;
     bool operator!=(const HiCFooter &other) const noexcept;
+
+    constexpr const HiCFooterMetadata &metadata() const noexcept;
+    constexpr HiCFooterMetadata &metadata() noexcept;
+
+    constexpr const std::string &url() const noexcept;
+    constexpr MatrixType matrixType() const noexcept;
+    constexpr NormalizationMethod normalization() const noexcept;
+    constexpr MatrixUnit unit() const noexcept;
+    constexpr std::int32_t resolution() const noexcept;
+    constexpr const chromosome &chrom1() const noexcept;
+    constexpr const chromosome &chrom2() const noexcept;
+    constexpr std::int64_t fileOffset() const noexcept;
+
+    constexpr const std::vector<double> &expectedValues() const noexcept;
+    constexpr const std::vector<double> &c1Norm() const noexcept;
+    constexpr const std::vector<double> &c2Norm() const noexcept;
+
+    constexpr std::vector<double> &expectedValues() noexcept;
+    constexpr std::vector<double> &c1Norm() noexcept;
+    constexpr std::vector<double> &c2Norm() noexcept;
 };
 }  // namespace internal
 
@@ -60,45 +98,60 @@ struct std::hash<internal::HiCHeader> {
 };
 
 template <>
-struct std::hash<internal::HiCFooter> {
-    inline std::size_t operator()(internal::HiCFooter const &f) const noexcept {
-        return internal::hash_combine(0, f.url, f.matrixType, f.normalization, f.unit,
-                                      f.resolution);
+struct std::hash<internal::HiCFooterMetadata> {
+    inline std::size_t operator()(internal::HiCFooterMetadata const &m) const noexcept {
+        return internal::hash_combine(0, m.url, m.matrixType, m.normalization, m.unit, m.resolution,
+                                      m.chrom1, m.chrom2);
     }
 };
 
 namespace internal {
+
+struct BlockMap {
+    std::map<std::int32_t, indexEntry> blocks{};
+    std::int32_t blockBinCount{};
+    std::int32_t blockColumnCount{};
+    double sumCount{};
+};
+
+struct BinaryBuffer {
+    std::string buffer{};
+    std::size_t i{};
+
+    template <typename T, typename std::enable_if<std::is_fundamental<T>::value>::type * = nullptr>
+    T read();
+};
+
 class HiCFileStream {
-    filestream::FileStream fs_{};
-    HiCHeader header_{};
-    std::unordered_set<HiCFooter> footers_{};
+    using ZStream = std::unique_ptr<z_stream, decltype(&inflateEnd)>;
+    std::shared_ptr<filestream::FileStream> _fs{};
+    std::shared_ptr<const HiCHeader> _header{};
+    std::string _strbuff{};
+    ZStream _zlibstream{initZStream()};
 
    public:
     HiCFileStream() = default;
     explicit HiCFileStream(std::string url);
     inline const std::string &url() const noexcept;
-    constexpr const HiCHeader &header() const noexcept;
+    const HiCHeader &header() const noexcept;
 
     bool isLocal() const noexcept;
     bool isRemote() const noexcept;
 
-    // reads the footer given a pair of chromosomes, norm, unit (BP or FRAG) and resolution.
-    HiCFooter readFooter(const chromosome &chrom1, const chromosome &chrom2, MatrixType matrixType,
-                         Normalization norm, Unit unit, std::int32_t wantedResolution);
-    HiCFooter readFooter(const std::string &chrom1, const std::string &chrom2,
-                         MatrixType matrixType, Normalization norm, Unit unit,
-                         std::int32_t wantedResolution);
-    HiCFooter readFooter(std::int32_t chromId1, std::int32_t chromId2, MatrixType matrixType,
-                         Normalization norm, Unit unit, std::int32_t wantedResolution);
-    HiCFooter readFooter(const chromosome &chrom, MatrixType matrixType, Normalization norm,
-                         Unit unit, std::int32_t wantedResolution);
-    HiCFooter readFooter(const std::string &chrom, MatrixType matrixType, Normalization norm,
-                         Unit unit, std::int32_t wantedResolution);
-    HiCFooter readFooter(std::int32_t chromId, MatrixType matrixType, Normalization norm, Unit unit,
-                         std::int32_t wantedResolution);
+    std::int32_t version() const noexcept;
 
-    void removeCachedFooter(const HiCFooter &footer);
-    void purgeFooterCache();
+    // reads the footer given a pair of chromosomes, norm, unit (BP or FRAG) and resolution.
+    HiCFooter readFooter(std::int32_t chromId1, std::int32_t chromId2, MatrixType matrixType,
+                         NormalizationMethod norm, MatrixUnit unit, std::int32_t wantedResolution);
+
+    static MatrixType readMatrixType(filestream::FileStream &fs, std::string &buff);
+    static NormalizationMethod readNormalizationMethod(filestream::FileStream &fs,
+                                                       std::string &buff);
+    static MatrixUnit readMatrixUnit(filestream::FileStream &fs, std::string &buff);
+
+    void readBlockMap(std::int64_t fileOffset, const chromosome &chrom1, const chromosome &chrom2,
+                      MatrixUnit wantedUnit, std::int32_t wantedResolution, BlockMap &buffer);
+    void readAndInflate(indexEntry idx, std::string &plainTextBuffer);
 
    private:
     static filestream::FileStream openStream(std::string url);
@@ -106,117 +159,146 @@ class HiCFileStream {
     // masterIndexPosition pointer
     static HiCHeader readHeader(filestream::FileStream &fs);
 
-    std::int32_t version() const noexcept;
-    void readCompressedBytes(indexEntry idx, std::string &buffer);
-
     std::vector<double> readExpectedVector(std::int64_t nValues);
     std::vector<double> readNormalizationFactors(std::int32_t wantedChrom);
     void applyNormalizationFactors(std::vector<double> &expectedValues,
                                    const std::vector<double> &normFactors);
+    std::vector<double> readNormalizationVector(indexEntry cNormEntry);
 
     void discardExpectedVector(std::int64_t nValues);
     void discardNormalizationFactors(std::int32_t wantedChrom);
 
     MatrixType readMatrixType();
-    Normalization readNormalization();
-    Unit readUnit();
+    NormalizationMethod readNormalizationMethod();
+    MatrixUnit readMatrixUnit();
 
     std::int64_t readNValues();
     bool checkMagicString();
     static bool checkMagicString(filestream::FileStream &fs);
     std::int64_t masterOffset() const noexcept;
+
+    static auto initZStream() -> ZStream;
 };
 
 class MatrixZoomData {
-    std::shared_ptr<HiCFileStream> stream;
-    std::int64_t myFilePos = 0LL;
-    std::vector<double> expectedValues;
-    std::vector<double> c1Norm;
-    std::vector<double> c2Norm;
-    std::int32_t c1 = 0;
-    std::int32_t c2 = 0;
-    MatrixType matrixType;
-    Normalization norm;
-    std::int32_t version = 0;
-    std::int32_t resolution = 0;
-    std::int32_t numBins1 = 0;
-    std::int32_t numBins2 = 0;
-    float sumCounts;
-    std::int32_t blockBinCount;
-    std::int32_t blockColumnCount;
-    std::map<std::int32_t, indexEntry> blockMap;
-    double avgCount;
+    std::shared_ptr<HiCFileStream> _fs;
+    std::shared_ptr<const HiCFooter> _footer;
+    BlockMap _blockMap{};
+    double _sumCount{};
+    std::set<std::int32_t> _blockNumberBuff{};
+    std::vector<contactRecord> _contactRecordBuff{};
+    BinaryBuffer _buffer{};
 
    public:
     MatrixZoomData() = delete;
-    MatrixZoomData(std::shared_ptr<HiCFileStream> stream_, const chromosome &chrom1,
-                   const chromosome &chrom2, const std::string &matrixType, const std::string &norm,
-                   const std::string &unit, std::int32_t resolution, std::int32_t &version,
-                   std::int64_t &master, std::int64_t &totalFileSize);
+    MatrixZoomData(std::shared_ptr<HiCFileStream> fs, std::shared_ptr<const HiCFooter> footer);
 
-    MatrixZoomData(std::shared_ptr<HiCFileStream> stream_, const chromosome &chrom1,
-                   const chromosome &chrom2, MatrixType matrixType, Normalization norm, Unit unit,
-                   std::int32_t resolution, std::int32_t &version, std::int64_t &master,
-                   std::int64_t &totalFileSize);
+    const chromosome &chrom1() const noexcept;
+    const chromosome &chrom2() const noexcept;
 
-    std::vector<contactRecord> getRecords(std::int64_t gx0, std::int64_t gx1, std::int64_t gy0,
-                                          std::int64_t gy1);
+    std::int32_t resolution() const noexcept;
+    MatrixType matrixType() const noexcept;
+    NormalizationMethod normalizationMethod() const noexcept;
+    MatrixUnit matrixUnit() const noexcept;
+
+    std::int32_t numBins1() const noexcept;
+    std::int32_t numBins2() const noexcept;
+
+    bool isIntra() const noexcept;
+    bool isInter() const noexcept;
+
+    const std::vector<double> &chrom1Norm() const noexcept;
+    const std::vector<double> &chrom2Norm() const noexcept;
+
+    inline double avgCount() const noexcept;
+
+    void fetch(const std::string &coord, std::vector<contactRecord> &buffer);
+    void fetch(std::int64_t start, std::int64_t end, std::vector<contactRecord> &buffer);
+
+    void fetch(const std::string &coord1, const std::string &coord2,
+               std::vector<contactRecord> &buffer);
+    void fetch(std::int64_t start1, std::int64_t end1, std::int64_t start2, std::int64_t end2,
+               std::vector<contactRecord> &buffer);
 
     std::vector<std::vector<float>> getRecordsAsMatrix(std::int64_t gx0, std::int64_t gx1,
                                                        std::int64_t gy0, std::int64_t gy1);
 
     std::int64_t getNumberOfTotalRecords();
-    bool isIntra() const noexcept;
 
    private:
-    static std::vector<double> readNormalizationVectorFromFooter(indexEntry cNormEntry,
-                                                                 std::int32_t &version,
-                                                                 const std::string &fileName);
+    static BlockMap readBlockMap(HiCFileStream &fs, const HiCFooter &footer);
 
-    static bool isInRange(std::int32_t r, std::int32_t c, std::int32_t numRows,
-                          std::int32_t numCols);
+    void readBlockNumbers(std::int64_t bin1, std::int64_t bin2, std::int64_t bin3,
+                          std::int64_t bin4, std::set<std::int32_t> &buffer) const;
+    void readBlockNumbersV9Intra(std::int64_t bin1, std::int64_t bin2, std::int64_t bin3,
+                                 std::int64_t bin4, std::set<std::int32_t> &buffer) const;
+    void readBlockOfInteractions(indexEntry idx, std::vector<contactRecord> &buffer);
+    void processInteraction(contactRecord &record, std::int32_t pos1, std::int32_t pos2);
+    static void readBlockOfInteractionsV6(BinaryBuffer &src, std::vector<contactRecord> &dest);
 
-    std::set<std::int32_t> getBlockNumbers(std::int64_t *regionIndices) const;
+    static void readBlockOfInteractionsType1Dispatcher(bool i16Bin1, bool i16Bin2, bool i16Counts,
+                                                       std::int32_t bin1Offset,
+                                                       std::int32_t bin2Offset, BinaryBuffer &src,
+                                                       std::vector<contactRecord> &dest) noexcept;
+    template <typename Bin1Type, typename Bin2Type, typename CountType>
+    static void readBlockOfInteractionsType1(std::int32_t bin1Offset, std::int32_t bin2Offset,
+                                             BinaryBuffer &src,
+                                             std::vector<contactRecord> &dest) noexcept;
 
-    std::vector<double> getNormVector(std::int32_t index);
-
-    std::vector<double> getExpectedValues();
+    template <typename CountType>
+    static void readBlockOfInteractionsType2(std::int32_t bin1Offset, std::int32_t bin2Offset,
+                                             BinaryBuffer &src,
+                                             std::vector<contactRecord> &dest) noexcept;
 };
 
 }  // namespace internal
 
 class HiCFile {
-    std::shared_ptr<internal::HiCFileStream> stream;
-    std::int64_t master = 0LL;
-    ChromosomeMap chromosomes;
-    std::string genomeID;
-    std::int32_t numChromosomes = 0;
-    std::int32_t version = 0;
-    std::int64_t nviPosition = 0LL;
-    std::int64_t nviLength = 0LL;
-    std::vector<std::int32_t> resolutions;
-    std::int64_t totalFileSize;
+    // clang-format off
+    using FooterCacheT =
+        std::unordered_map<internal::HiCFooterMetadata,
+                           std::shared_ptr<const internal::HiCFooter>>;
+    // clang-format on
+    std::shared_ptr<internal::HiCFileStream> _fs{};
+    FooterCacheT _footers{};
 
    public:
-    explicit HiCFile(std::string fileName_);
+    explicit HiCFile(std::string url_);
 
     const std::string &url() const noexcept;
-    const std::string &getGenomeID() const noexcept;
+    const std::string &name() const noexcept;
+    std::int32_t version() const noexcept;
+    const ChromosomeMap &chromosomes() const noexcept;
+    const std::string &genomeID() const noexcept;
+    const std::vector<std::int32_t> &resolutions() const noexcept;
 
-    const std::vector<std::int32_t> &getResolutions() const noexcept;
-
-    std::vector<chromosome> getChromosomes() const;
-    auto getChromosomeMap() const noexcept -> const ChromosomeMap &;
-
-    internal::MatrixZoomData getMatrixZoomData(const std::string &chr1, const std::string &chr2,
-                                               const std::string &matrixType,
-                                               const std::string &norm, const std::string &unit,
+    internal::MatrixZoomData getMatrixZoomData(const chromosome &chrom, MatrixType matrixType,
+                                               NormalizationMethod norm, MatrixUnit unit,
                                                std::int32_t resolution);
-    internal::MatrixZoomData getMatrixZoomData(const std::string &chr1, const std::string &chr2,
-                                               MatrixType matrixType, Normalization norm, Unit unit,
+    internal::MatrixZoomData getMatrixZoomData(const std::string &chromName, MatrixType matrixType,
+                                               NormalizationMethod norm, MatrixUnit unit,
                                                std::int32_t resolution);
+    internal::MatrixZoomData getMatrixZoomData(std::int32_t chromId, MatrixType matrixType,
+                                               NormalizationMethod norm, MatrixUnit unit,
+                                               std::int32_t resolution);
+
+    internal::MatrixZoomData getMatrixZoomData(const chromosome &chrom1, const chromosome &chrom2,
+                                               MatrixType matrixType, NormalizationMethod norm,
+                                               MatrixUnit unit, std::int32_t resolution);
+    internal::MatrixZoomData getMatrixZoomData(const std::string &chromName1,
+                                               const std::string &chromName2, MatrixType matrixType,
+                                               NormalizationMethod norm, MatrixUnit unit,
+                                               std::int32_t resolution);
+    internal::MatrixZoomData getMatrixZoomData(std::int32_t chromId1, std::int32_t chromId2,
+                                               MatrixType matrixType, NormalizationMethod norm,
+                                               MatrixUnit unit, std::int32_t resolution);
 
    private:
+    std::shared_ptr<const internal::HiCFooter> getFooter(std::int32_t chromId1,
+                                                         std::int32_t chromId2,
+                                                         MatrixType matrixType,
+                                                         NormalizationMethod norm, MatrixUnit unit,
+                                                         std::int32_t resolution);
     static std::int64_t readTotalFileSize(const std::string &url);
 
     auto readHeader(std::istream &fin, std::int64_t &masterIndexPosition, std::string &genomeID,
@@ -237,14 +319,13 @@ std::vector<contactRecord> straw(const std::string &matrixType, const std::strin
                                  const std::string &chr2loc, const std::string &unit,
                                  std::int32_t binsize);
 
-std::vector<contactRecord> straw(MatrixType matrixType, Normalization norm,
+std::vector<contactRecord> straw(MatrixType matrixType, NormalizationMethod norm,
                                  const std::string &fname, const std::string &chr1loc,
-                                 const std::string &chr2loc, Unit unit, std::int32_t binsize);
+                                 const std::string &chr2loc, MatrixUnit unit, std::int32_t binsize);
 
 std::int64_t getNumRecordsForFile(const std::string &filename, std::int32_t binsize,
                                   bool interOnly);
 
-// #include "../../hic_file_impl.hpp"
+#include "../../hic_file_impl.hpp"
 #include "../../hic_file_stream_impl.hpp"
-// #include "../../matrix_zoom_data_impl.hpp"
-// #include "../../straw_impl.hpp"
+#include "../../matrix_zoom_data_impl.hpp"

@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <fmt/format.h>
+
 #include <cassert>
 #include <cstdint>
 #include <map>
@@ -47,30 +49,37 @@ struct chromosome {
     }
 };
 
+template <>
+struct std::hash<chromosome> {
+    inline std::size_t operator()(chromosome const &c) const noexcept {
+        return std::hash<std::int32_t>{}(c.index);
+    }
+};
+
 using ChromosomeMap = std::map<std::string, chromosome>;
 
-enum class Normalization { NONE, VC, VC_SQRT, KR, SCALE };
+enum class NormalizationMethod { NONE, VC, VC_SQRT, KR, SCALE };
 enum class MatrixType { observed, oe, expected };
-enum class Unit { BP, FRAG };
+enum class MatrixUnit { BP, FRAG };
 
-inline Normalization ParseNormStr(const std::string &s) {
+inline NormalizationMethod ParseNormStr(const std::string &s) {
     if (s == "NONE") {
-        return Normalization::NONE;
+        return NormalizationMethod::NONE;
     }
     if (s == "VC") {
-        return Normalization::VC;
+        return NormalizationMethod::VC;
     }
 
     if (s == "VC_SQRT") {
-        return Normalization::VC_SQRT;
+        return NormalizationMethod::VC_SQRT;
     }
 
     if (s == "KR") {
-        return Normalization::KR;
+        return NormalizationMethod::KR;
     }
 
     if (s == "SCALE") {
-        return Normalization::SCALE;
+        return NormalizationMethod::SCALE;
     }
 
     throw std::runtime_error("Invalid normalization \"" + s + "\"");
@@ -90,28 +99,28 @@ inline MatrixType ParseMatrixTypeStr(const std::string &s) {
     throw std::runtime_error("Invalid matrix type \"" + s + "\"");
 }
 
-inline Unit ParseUnitStr(const std::string &s) {
+inline MatrixUnit ParseUnitStr(const std::string &s) {
     if (s == "BP") {
-        return Unit::BP;
+        return MatrixUnit::BP;
     }
     if (s == "FRAG") {
-        return Unit::FRAG;
+        return MatrixUnit::FRAG;
     }
 
     throw std::runtime_error("Invalid unit \"" + s + "\"");
 }
-
-inline std::string to_string(Normalization n) {
+/*
+inline std::string to_string(NormalizationMethod n) {
     switch (n) {
-        case Normalization::NONE:
+        case NormalizationMethod::NONE:
             return "NONE";
-        case Normalization::VC:
+        case NormalizationMethod::VC:
             return "VC";
-        case Normalization::VC_SQRT:
+        case NormalizationMethod::VC_SQRT:
             return "VC_SQRT";
-        case Normalization::KR:
+        case NormalizationMethod::KR:
             return "KR";
-        case Normalization::SCALE:
+        case NormalizationMethod::SCALE:
             return "SCALE";
     }
     assert(false);
@@ -131,16 +140,17 @@ inline std::string to_string(MatrixType t) {
     std::abort();
 }
 
-inline std::string to_string(Unit u) {
+inline std::string to_string(MatrixUnit u) {
     switch (u) {
-        case Unit::BP:
+        case MatrixUnit::BP:
             return "BP";
-        case Unit::FRAG:
+        case MatrixUnit::FRAG:
             return "FRAG";
     }
     assert(false);
     std::abort();
 }
+ */
 
 namespace internal {
 // Adapted from:
@@ -170,3 +180,77 @@ inline void convertGenomeToBinPos(const std::int64_t origRegionIndices[4],
         regionIndices[q] = origRegionIndices[q] / resolution;
     }
 }
+
+template <>
+struct fmt::formatter<NormalizationMethod> {
+    static constexpr auto parse(format_parse_context &ctx) -> decltype(ctx.begin()) {
+        if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
+            throw fmt::format_error("invalid format");
+        }
+        return ctx.end();
+    }
+
+    template <class FormatContext>
+    static auto format(const NormalizationMethod n, FormatContext &ctx) -> decltype(ctx.out()) {
+        switch (n) {
+            case NormalizationMethod::NONE:
+                return fmt::format_to(ctx.out(), FMT_STRING("NONE"));
+            case NormalizationMethod::VC:
+                return fmt::format_to(ctx.out(), FMT_STRING("VC"));
+            case NormalizationMethod::VC_SQRT:
+                return fmt::format_to(ctx.out(), FMT_STRING("VC_SQRT"));
+            case NormalizationMethod::KR:
+                return fmt::format_to(ctx.out(), FMT_STRING("KR"));
+            case NormalizationMethod::SCALE:
+                return fmt::format_to(ctx.out(), FMT_STRING("SCALE"));
+        }
+        assert(false);
+        std::abort();
+    }
+};
+
+template <>
+struct fmt::formatter<MatrixType> {
+    static constexpr auto parse(format_parse_context &ctx) -> decltype(ctx.begin()) {
+        if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
+            throw fmt::format_error("invalid format");
+        }
+        return ctx.end();
+    }
+
+    template <class FormatContext>
+    static auto format(const MatrixType t, FormatContext &ctx) -> decltype(ctx.out()) {
+        switch (t) {
+            case MatrixType::observed:
+                return fmt::format_to(ctx.out(), FMT_STRING("observed"));
+            case MatrixType::oe:
+                return fmt::format_to(ctx.out(), FMT_STRING("oe"));
+            case MatrixType::expected:
+                return fmt::format_to(ctx.out(), FMT_STRING("expected"));
+        }
+        assert(false);
+        std::abort();
+    }
+};
+
+template <>
+struct fmt::formatter<MatrixUnit> {
+    static constexpr auto parse(format_parse_context &ctx) -> decltype(ctx.begin()) {
+        if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
+            throw fmt::format_error("invalid format");
+        }
+        return ctx.end();
+    }
+
+    template <class FormatContext>
+    static auto format(const MatrixUnit u, FormatContext &ctx) -> decltype(ctx.out()) {
+        switch (u) {
+            case MatrixUnit::BP:
+                return fmt::format_to(ctx.out(), FMT_STRING("BP"));
+            case MatrixUnit::FRAG:
+                return fmt::format_to(ctx.out(), FMT_STRING("FRAG"));
+        }
+        assert(false);
+        std::abort();
+    }
+};

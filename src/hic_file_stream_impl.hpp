@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <fmt/format.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
@@ -36,20 +38,89 @@ inline std::int32_t HiCHeader::nResolutions() const noexcept {
     return static_cast<std::int32_t>(resolutions.size());
 }
 
-constexpr HiCFooter::operator bool() const noexcept { return fileOffset >= 0; }
+inline const chromosome &HiCHeader::getChromosome(std::int32_t id) const noexcept {
+    // Chromosomes are sorted by id, so we can use simple arithmetic on iterators to find the
+    // chromosome with the given id
+    assert(id < chromosomes.size());
 
-inline bool HiCFooter::operator==(const HiCFooter &other) const noexcept {
-    return url == other.url && matrixType == other.matrixType &&
-           normalization == other.normalization && unit == other.unit &&
-           resolution == other.resolution;
+    const auto it = std::next(chromosomes.begin(), id);
+    assert(it->second.index == id);
+    return it->second;
 }
 
-inline bool HiCFooter::operator!=(const HiCFooter &other) const noexcept {
+constexpr HiCFooterMetadata::operator bool() const noexcept { return fileOffset >= 0; }
+
+inline bool HiCFooterMetadata::operator==(const HiCFooterMetadata &other) const noexcept {
+    return url == other.url && matrixType == other.matrixType &&
+           normalization == other.normalization && unit == other.unit &&
+           resolution == other.resolution && chrom1 == other.chrom1 && chrom2 == other.chrom2;
+}
+
+inline bool HiCFooterMetadata::operator!=(const HiCFooterMetadata &other) const noexcept {
     return !(*this == other);
 }
 
+inline HiCFooter::HiCFooter(HiCFooterMetadata metadata_) noexcept
+    : _metadata(std::move(metadata_)) {}
+
+constexpr HiCFooter::operator bool() const noexcept { return !metadata(); }
+inline bool HiCFooter::operator==(const HiCFooter &other) const noexcept {
+    return metadata() == other.metadata();
+}
+inline bool HiCFooter::operator!=(const HiCFooter &other) const noexcept {
+    return !(*this == other);
+}
+constexpr const HiCFooterMetadata &HiCFooter::metadata() const noexcept { return _metadata; }
+constexpr HiCFooterMetadata &HiCFooter::metadata() noexcept { return _metadata; }
+constexpr const std::string &HiCFooter::url() const noexcept { return metadata().url; }
+constexpr MatrixType HiCFooter::matrixType() const noexcept { return metadata().matrixType; }
+constexpr NormalizationMethod HiCFooter::normalization() const noexcept {
+    return metadata().normalization;
+}
+constexpr MatrixUnit HiCFooter::unit() const noexcept { return metadata().unit; }
+constexpr std::int32_t HiCFooter::resolution() const noexcept { return metadata().resolution; }
+constexpr const chromosome &HiCFooter::chrom1() const noexcept { return metadata().chrom1; }
+constexpr const chromosome &HiCFooter::chrom2() const noexcept { return metadata().chrom2; }
+constexpr std::int64_t HiCFooter::fileOffset() const noexcept { return metadata().fileOffset; }
+
+constexpr const std::vector<double> &HiCFooter::expectedValues() const noexcept {
+    return _expectedValues;
+}
+
+constexpr const std::vector<double> &HiCFooter::c1Norm() const noexcept { return _c1Norm; }
+
+constexpr const std::vector<double> &HiCFooter::c2Norm() const noexcept {
+    if (chrom1() == chrom2()) {
+        return _c1Norm;
+    }
+    return _c2Norm;
+}
+
+constexpr std::vector<double> &HiCFooter::expectedValues() noexcept { return _expectedValues; }
+
+constexpr std::vector<double> &HiCFooter::c1Norm() noexcept { return _c1Norm; }
+
+constexpr std::vector<double> &HiCFooter::c2Norm() noexcept {
+    if (chrom1() == chrom2()) {
+        return _c1Norm;
+    }
+    return _c2Norm;
+}
+
+template <typename T, typename std::enable_if<std::is_fundamental<T>::value>::type *>
+inline T BinaryBuffer::read() {
+    static_assert(sizeof(char) == 1, "");
+    assert(i < buffer.size());
+    T x{};
+
+    std::memcpy(static_cast<void *>(&x), buffer.data() + i, sizeof(T));
+    i += sizeof(T);
+    return x;
+}
+
 inline HiCFileStream::HiCFileStream(std::string url)
-    : fs_(HiCFileStream::openStream(std::move(url))), header_(HiCFileStream::readHeader(fs_)) {}
+    : _fs(std::make_shared<filestream::FileStream>(HiCFileStream::openStream(std::move(url)))),
+      _header(std::make_shared<const HiCHeader>(HiCFileStream::readHeader(*_fs))) {}
 
 inline filestream::FileStream HiCFileStream::openStream(std::string url) {
     const auto isRemoteFile = StartsWith(url, "http");
@@ -71,57 +142,52 @@ inline filestream::FileStream HiCFileStream::openStream(std::string url) {
     }
 }
 
-inline const std::string &HiCFileStream::url() const noexcept { return fs_.url(); }
-constexpr const HiCHeader &HiCFileStream::header() const noexcept { return header_; }
+inline const std::string &HiCFileStream::url() const noexcept { return _fs->url(); }
+inline const HiCHeader &HiCFileStream::header() const noexcept { return *_header; }
 
-inline bool HiCFileStream::isLocal() const noexcept { return fs_.is_local(); }
+inline bool HiCFileStream::isLocal() const noexcept { return _fs->is_local(); }
 
-inline bool HiCFileStream::isRemote() const noexcept { return fs_.is_remote(); }
+inline bool HiCFileStream::isRemote() const noexcept { return _fs->is_remote(); }
 
 inline std::int32_t HiCFileStream::version() const noexcept {
-    assert(header_.version != -1);
-    return header_.version;
-}
-
-inline void HiCFileStream::readCompressedBytes(indexEntry idx, std::string &buffer) {
-    fs_.seekg(idx.position);
-    fs_.read(buffer, idx.size);
+    assert(_header->version != -1);
+    return _header->version;
 }
 
 inline void HiCFileStream::discardExpectedVector(std::int64_t nValues) {
     const auto elementSize = version() > 8 ? sizeof(float) : sizeof(double);
-    fs_.seekg(nValues * elementSize, std::ios::cur);
+    _fs->seekg(nValues * elementSize, std::ios::cur);
 }
 
 inline std::vector<double> HiCFileStream::readExpectedVector(std::int64_t nValues) {
     std::vector<double> initialExpectedValues(nValues);
     if (version() > 8) {
         std::vector<float> tmpbuff(nValues);
-        fs_.read(tmpbuff);
+        _fs->read(tmpbuff);
         std::transform(tmpbuff.begin(), tmpbuff.end(), initialExpectedValues.begin(),
                        [](float n) { return static_cast<double>(n); });
     } else {
-        fs_.read(initialExpectedValues);
+        _fs->read(initialExpectedValues);
     }
 
     // This seems to be copying initialValues into finalResult at the moment
     // std::int32_t window = 5000000 / resolution;
-    // rollingMedian(initialExpectedValues, expectedValues, window);
+    // rollingMedian(initialExpectedValues, _expectedValues, window);
     return initialExpectedValues;
 }
 
 inline std::vector<double> HiCFileStream::readNormalizationFactors(std::int32_t wantedChrom) {
-    const auto nFactors = fs_.read<std::int32_t>();
+    const auto nFactors = _fs->read<std::int32_t>();
     std::vector<double> normFactors{};
     auto readFactor = [this]() -> double {
         if (version() > 8) {
-            return fs_.read<float>();
+            return _fs->read<float>();
         }
-        return fs_.read<double>();
+        return _fs->read<double>();
     };
 
     for (auto i = 0; i < nFactors; ++i) {
-        const auto foundChrom = fs_.read<std::int32_t>();
+        const auto foundChrom = _fs->read<std::int32_t>();
         const auto v = readFactor();
         if (foundChrom == wantedChrom) {
             normFactors.push_back(v);
@@ -140,34 +206,60 @@ inline void HiCFileStream::applyNormalizationFactors(std::vector<double> &expect
                        [&](auto n) { return n / factor; });
     }
 }
+inline std::vector<double> HiCFileStream::readNormalizationVector(indexEntry cNormEntry) {
+    _fs->seekg(cNormEntry.position);
+    const auto numValues = static_cast<std::size_t>(readNValues());
+
+    std::vector<double> buffer(numValues);
+    if (version() > 8) {
+        std::vector<float> tmpbuffer(numValues);
+        _fs->read(tmpbuffer);
+        std::transform(tmpbuffer.begin(), tmpbuffer.end(), buffer.begin(),
+                       [](float n) { return static_cast<double>(n); });
+
+    } else {
+        _fs->read(buffer);
+    }
+    return buffer;
+}
 
 inline void HiCFileStream::discardNormalizationFactors(std::int32_t wantedChrom) {
     (void)readNormalizationFactors(wantedChrom);
 }
 
+inline MatrixType HiCFileStream::readMatrixType(filestream::FileStream &fs, std::string &buff) {
+    fs.getline(buff, '\0');
+    return ParseMatrixTypeStr(buff);
+}
+
+inline NormalizationMethod HiCFileStream::readNormalizationMethod(filestream::FileStream &fs,
+                                                                  std::string &buff) {
+    fs.getline(buff, '\0');
+    return ParseNormStr(buff);
+}
+
+inline MatrixUnit HiCFileStream::readMatrixUnit(filestream::FileStream &fs, std::string &buff) {
+    fs.getline(buff, '\0');
+    return ParseUnitStr(buff);
+}
+
 inline MatrixType HiCFileStream::readMatrixType() {
-    std::string strbuff;
-    fs_.getline(strbuff, '\0');
-    return ParseMatrixTypeStr(strbuff);
+    return HiCFileStream::readMatrixType(*_fs, _strbuff);
 }
 
-inline Normalization HiCFileStream::readNormalization() {
-    std::string strbuff;
-    fs_.getline(strbuff, '\0');
-    return ParseNormStr(strbuff);
+inline NormalizationMethod HiCFileStream::readNormalizationMethod() {
+    return HiCFileStream::readNormalizationMethod(*_fs, _strbuff);
 }
 
-inline Unit HiCFileStream::readUnit() {
-    std::string strbuff;
-    fs_.getline(strbuff, '\0');
-    return ParseUnitStr(strbuff);
+inline MatrixUnit HiCFileStream::readMatrixUnit() {
+    return HiCFileStream::readMatrixUnit(*_fs, _strbuff);
 }
 
 inline std::int64_t HiCFileStream::readNValues() {
     if (version() > 8) {
-        return fs_.read<std::int64_t>();
+        return _fs->read<std::int64_t>();
     }
-    return fs_.read<std::int32_t>();
+    return _fs->read<std::int32_t>();
 }
 
 inline bool HiCFileStream::checkMagicString(filestream::FileStream &fs) {
@@ -175,10 +267,78 @@ inline bool HiCFileStream::checkMagicString(filestream::FileStream &fs) {
 }
 
 inline std::int64_t HiCFileStream::masterOffset() const noexcept {
-    return header_.masterIndexOffset;
+    return _header->masterIndexOffset;
 }
 
-inline bool HiCFileStream::checkMagicString() { return checkMagicString(fs_); }
+inline auto HiCFileStream::initZStream() -> ZStream {
+    ZStream zs(new z_stream, &inflateEnd);
+    zs->zalloc = Z_NULL;
+    zs->zfree = Z_NULL;
+    zs->opaque = Z_NULL;
+    // Signal no input data is provided for initialization
+    zs->avail_in = 0;
+    zs->next_in = Z_NULL;
+
+    const auto status = inflateInit(zs.get());
+    if (status != Z_OK) {
+        throw std::runtime_error(fmt::format(
+            FMT_STRING("failed to initialize zlib decompression stream: {}"), zError(status)));
+    }
+
+    return zs;
+}
+
+inline void HiCFileStream::readBlockMap(std::int64_t fileOffset, const chromosome &chrom1,
+                                        const chromosome &chrom2, MatrixUnit wantedUnit,
+                                        std::int32_t wantedResolution, BlockMap &buffer) {
+    _fs->seekg(fileOffset);
+    auto &blockMap = buffer.blocks;
+    blockMap.clear();
+
+    const auto c1i = _fs->read<std::int32_t>();
+    const auto c2i = _fs->read<std::int32_t>();
+    const auto numResolutions = _fs->read<std::int32_t>();
+
+    assert(c1i == chrom1.index);
+    assert(c2i == chrom2.index);
+
+    for (std::int32_t i = 0; i < numResolutions; ++i) {
+        const auto foundUnit = readMatrixUnit();
+        (void)_fs->read<std::int32_t>();  // oldIndex
+        const auto sumCount = _fs->read<float>();
+        (void)_fs->read<float>();  // occupiedCellCount
+        (void)_fs->read<float>();  // stdDev
+        (void)_fs->read<float>();  // percent95
+
+        const auto foundResolution = _fs->read<std::int32_t>();
+        const auto blockBinCount = _fs->read<std::int32_t>();
+        const auto blockColumnCount = _fs->read<std::int32_t>();
+
+        const auto nBlocks = static_cast<std::size_t>(_fs->read<std::int32_t>());
+
+        if (wantedUnit == foundUnit && wantedResolution == foundResolution) {
+            for (std::size_t j = 0; j < nBlocks; ++j) {
+                const auto key = _fs->read<std::int32_t>();
+                indexEntry index{_fs->read<std::int64_t>(), _fs->read<std::int32_t>()};
+                assert(index.position + index.size < _fs->size());
+                blockMap.emplace(key, std::move(index));
+            }
+            buffer.blockBinCount = blockBinCount;
+            buffer.blockColumnCount = blockColumnCount;
+            buffer.sumCount = static_cast<double>(sumCount);
+            return;
+        }
+
+        constexpr auto blockSize = sizeof(int32_t) + sizeof(int64_t) + sizeof(int32_t);
+        _fs->seekg(nBlocks * blockSize, std::ios::cur);
+    }
+
+    throw std::runtime_error(
+        fmt::format(FMT_STRING("Unable to find block map for unit {} and resolution {}"),
+                    wantedUnit, wantedResolution));
+}
+
+inline bool HiCFileStream::checkMagicString() { return checkMagicString(*_fs); }
 
 // reads the header, storing the positions of the normalization vectors and returning the
 // masterIndexPosition pointer
@@ -256,97 +416,115 @@ inline HiCHeader HiCFileStream::readHeader(filestream::FileStream &fs) {
     return header;
 }
 
-inline HiCFooter HiCFileStream::readFooter(const chromosome &chrom1, const chromosome &chrom2,
-                                           MatrixType matrixType, Normalization norm, Unit unit,
-                                           std::int32_t wantedResolution) {
-    return readFooter(chrom1.index, chrom2.index, matrixType, norm, unit, wantedResolution);
-}
-inline HiCFooter HiCFileStream::readFooter(const std::string &chrom1, const std::string &chrom2,
-                                           MatrixType matrixType, Normalization norm, Unit unit,
-                                           std::int32_t wantedResolution) {
-    auto it1 = this->header_.chromosomes.find(chrom1);
-    if (it1 == this->header_.chromosomes.end()) {
-        throw std::out_of_range("no such chromosome \"" + chrom1 + "\"");
+inline void HiCFileStream::readAndInflate(indexEntry idx, std::string &plainTextBuffer) {
+    try {
+        // _strbuff is used to store compressed data
+        // plainTextBuffer is used to store decompressed data
+        assert(_zlibstream);
+        assert(idx.size > 0);
+
+        _fs->seekg(idx.position);
+        _fs->read(_strbuff, idx.size);
+
+        _zlibstream->avail_in = static_cast<uInt>(_strbuff.size());
+        _zlibstream->next_in = reinterpret_cast<Bytef *>(&*(_strbuff.begin()));
+
+        auto status = inflateReset(_zlibstream.get());
+        if (status != Z_OK) {
+            plainTextBuffer.clear();
+            throw std::runtime_error(zError(status));
+        }
+
+        plainTextBuffer.reserve(idx.size * 3);
+        plainTextBuffer.resize(plainTextBuffer.capacity());
+        auto current_size = 0;
+
+        while (true) {
+            _zlibstream->avail_out = static_cast<uInt>(plainTextBuffer.size() - current_size);
+            _zlibstream->next_out =
+                reinterpret_cast<Bytef *>(&*(plainTextBuffer.begin() + current_size));
+
+            status = inflate(_zlibstream.get(), Z_NO_FLUSH);
+            if (status == Z_STREAM_END) {
+                // assert(_zlibstream->avail_in == 0);
+                break;
+            }
+            if (status != Z_OK) {
+                plainTextBuffer.clear();
+                throw std::runtime_error(zError(status));
+            }
+
+            current_size = plainTextBuffer.size();
+            plainTextBuffer.resize(current_size + idx.size);
+        }
+
+        // assert(plainTextBuffer.size() >= _zlibstream->total_out);
+        plainTextBuffer.resize(static_cast<std::size_t>(_zlibstream->total_out));
+    } catch (const std::exception &e) {
+        throw std::runtime_error(fmt::format(FMT_STRING("failed to decompress block at pos {}: {}"),
+                                             idx.position, e.what()));
     }
-    auto it2 = this->header_.chromosomes.find(chrom2);
-    if (it2 == this->header_.chromosomes.end()) {
-        throw std::out_of_range("no such chromosome \"" + chrom2 + "\"");
-    }
-
-    return readFooter(it1->second, it2->second, matrixType, norm, unit, wantedResolution);
 }
 
-inline HiCFooter HiCFileStream::readFooter(const chromosome &chrom, MatrixType matrixType,
-                                           Normalization norm, Unit unit,
-                                           std::int32_t wantedResolution) {
-    return readFooter(chrom, chrom, matrixType, norm, unit, wantedResolution);
-}
-inline HiCFooter HiCFileStream::readFooter(const std::string &chrom, MatrixType matrixType,
-                                           Normalization norm, Unit unit,
-                                           std::int32_t wantedResolution) {
-    return readFooter(chrom, chrom, matrixType, norm, unit, wantedResolution);
-}
-inline HiCFooter HiCFileStream::readFooter(std::int32_t chromId, MatrixType matrixType,
-                                           Normalization norm, Unit unit,
-                                           std::int32_t wantedResolution) {
-    return readFooter(chromId, chromId, matrixType, norm, unit, wantedResolution);
-}
-
-inline HiCFooter HiCFileStream::readFooter(std::int32_t chromId1, std::int32_t chromId2,
+inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const std::int32_t chromId2,
                                            const MatrixType wantedMatrixType,
-                                           const Normalization wantedNorm, const Unit wantedUnit,
-                                           std::int32_t wantedResolution) {
+                                           const NormalizationMethod wantedNorm,
+                                           const MatrixUnit wantedUnit,
+                                           const std::int32_t wantedResolution) {
+    assert(chromId1 <= chromId2);
+    assert(std::find(_header->resolutions.begin(), _header->resolutions.end(), wantedResolution) !=
+           _header->resolutions.end());
+
     using MT = MatrixType;
-    using NM = Normalization;
+    using NM = NormalizationMethod;
 
-    HiCFooter footer{fs_.url(), wantedMatrixType, wantedNorm, wantedUnit, wantedResolution};
+    // clang-format off
+    HiCFooter footer{
+        HiCFooterMetadata{_fs->url(),
+                          wantedMatrixType,
+                          wantedNorm,
+                          wantedUnit,
+                          wantedResolution,
+                          _header->getChromosome(chromId1),
+                         _header->getChromosome(chromId2)}
+        };
+    // clang-format on
 
-    auto it = footers_.find(footer);
-    if (it != footers_.end()) {
-        return *it;
-    }
-
-    fs_.seekg(masterOffset());
-
-    auto insert_footer_and_return = [&]() {
-        const auto node = footers_.emplace(std::move(footer));
-        assert(node.second);
-        return *node.first;
-    };
-
-    if (chromId1 > chromId2) {
-        std::swap(chromId1, chromId2);
-    }
+    auto &metadata = footer.metadata();
+    auto &expectedValues = footer.expectedValues();
+    auto &c1Norm = footer.c1Norm();
+    auto &c2Norm = footer.c2Norm();
 
     const auto key = std::to_string(chromId1) + "_" + std::to_string(chromId2);
 
+    _fs->seekg(masterOffset());
     (void)readNValues();  // nBytes
 
-    auto nEntries = fs_.read<std::int32_t>();
+    auto nEntries = _fs->read<std::int32_t>();
     for (int i = 0; i < nEntries; i++) {
-        const auto strbuff = fs_.getline('\0');
-        const auto fpos = fs_.read<std::int64_t>();
-        (void)fs_.read<std::int32_t>();  // sizeInBytes
+        const auto strbuff = _fs->getline('\0');
+        const auto fpos = _fs->read<std::int64_t>();
+        (void)_fs->read<std::int32_t>();  // sizeInBytes
         if (strbuff == key) {
-            footer.fileOffset = fpos;
+            metadata.fileOffset = fpos;
         }
     }
-    if (footer.fileOffset == -1) {
+    if (metadata.fileOffset == -1) {
         throw std::runtime_error("File doesn't have the given chr_chr map " + key);
     }
 
     if ((wantedMatrixType == MT::observed && wantedNorm == NM::NONE) ||
         ((wantedMatrixType == MT::oe || wantedMatrixType == MT::expected) &&
          wantedNorm == NM::NONE && chromId1 != chromId2)) {
-        return insert_footer_and_return();  // no need to read wantedNorm vector index
+        return footer;  // no need to read wantedNorm vector index
     }
 
     // read in and ignore expected value maps; don't store; reading these to
     // get to wantedNorm vector index
-    auto nExpectedValues = fs_.read<std::int32_t>();
+    auto nExpectedValues = _fs->read<std::int32_t>();
     for (std::int32_t i = 0; i < nExpectedValues; i++) {
-        const auto foundUnit = readUnit();
-        const auto foundResolution = fs_.read<std::int32_t>();
+        const auto foundUnit = readMatrixUnit();
+        const auto foundResolution = _fs->read<std::int32_t>();
         const auto nValues = readNValues();
 
         bool store = chromId1 == chromId2 &&
@@ -355,9 +533,9 @@ inline HiCFooter HiCFileStream::readFooter(std::int32_t chromId1, std::int32_t c
                      foundResolution == wantedResolution;
 
         if (store) {
-            footer.expectedValues = readExpectedVector(nValues);
+            expectedValues = readExpectedVector(nValues);
             const auto normFactors = readNormalizationFactors(chromId1);
-            applyNormalizationFactors(footer.expectedValues, normFactors);
+            applyNormalizationFactors(expectedValues, normFactors);
 
         } else {
             discardExpectedVector(nValues);
@@ -367,19 +545,20 @@ inline HiCFooter HiCFileStream::readFooter(std::int32_t chromId1, std::int32_t c
 
     if (chromId1 == chromId2 && (wantedMatrixType == MT::oe || wantedMatrixType == MT::expected) &&
         wantedNorm == NM::NONE) {
-        if (footer.expectedValues.empty()) {
-            throw std::runtime_error("File did not contain expected values vectors at " +
-                                     std::to_string(wantedResolution) + " " +
-                                     to_string(wantedUnit));
+        if (expectedValues.empty()) {
+            throw std::runtime_error(fmt::format(
+                FMT_STRING(
+                    "File did not contain expected values vectors for unit {} at resolution {}"),
+                wantedUnit, wantedResolution));
         }
-        return insert_footer_and_return();
+        return footer;
     }
 
-    nExpectedValues = fs_.read<std::int32_t>();
+    nExpectedValues = _fs->read<std::int32_t>();
     for (std::int32_t i = 0; i < nExpectedValues; i++) {
-        const auto foundNorm = readNormalization();
-        const auto foundUnit = readUnit();
-        const auto foundResolution = fs_.read<std::int32_t>();
+        const auto foundNorm = readNormalizationMethod();
+        const auto foundUnit = readMatrixUnit();
+        const auto foundResolution = _fs->read<std::int32_t>();
 
         const auto nValues = readNValues();
         bool store = chromId1 == chromId2 &&
@@ -388,9 +567,9 @@ inline HiCFooter HiCFileStream::readFooter(std::int32_t chromId1, std::int32_t c
                      foundResolution == wantedResolution;
 
         if (store) {
-            footer.expectedValues = readExpectedVector(nValues);
+            expectedValues = readExpectedVector(nValues);
             const auto normFactors = readNormalizationFactors(chromId1);
-            applyNormalizationFactors(footer.expectedValues, normFactors);
+            applyNormalizationFactors(expectedValues, normFactors);
         } else {
             discardExpectedVector(nValues);
             discardNormalizationFactors(chromId1);
@@ -399,50 +578,58 @@ inline HiCFooter HiCFileStream::readFooter(std::int32_t chromId1, std::int32_t c
 
     if (chromId1 == chromId2 && (wantedMatrixType == MT::oe || wantedMatrixType == MT::expected) &&
         wantedNorm != NM::NONE) {
-        if (footer.expectedValues.empty()) {
-            throw std::runtime_error("File did not contain normalized expected values vectors at " +
-                                     std::to_string(wantedResolution) + " " +
-                                     to_string(wantedUnit));
+        if (expectedValues.empty()) {
+            throw std::runtime_error(fmt::format(
+                FMT_STRING(
+                    "File did not contain normalized expected values for unit {} at resolution {}"),
+                wantedUnit, wantedResolution));
         }
     }
 
     // Index of normalization vectors
-    nEntries = fs_.read<std::int32_t>();
+    nEntries = _fs->read<std::int32_t>();
     for (std::int32_t i = 0; i < nEntries; i++) {
-        const auto foundNorm = readNormalization();
-        const auto foundChrom = fs_.read<std::int32_t>();
-        const auto foundUnit = readUnit();
+        const auto foundNorm = readNormalizationMethod();
+        const auto foundChrom = _fs->read<std::int32_t>();
+        const auto foundUnit = readMatrixUnit();
 
-        const auto foundResolution = fs_.read<std::int32_t>();
-        const auto filePosition = fs_.read<std::int64_t>();
+        const auto foundResolution = _fs->read<std::int32_t>();
+        const auto filePosition = _fs->read<std::int64_t>();
         const auto sizeInBytes = version() > 8
-                                     ? fs_.read<std::int64_t>()
-                                     : static_cast<std::int64_t>(fs_.read<std::int32_t>());
+                                     ? _fs->read<std::int64_t>()
+                                     : static_cast<std::int64_t>(_fs->read<std::int32_t>());
         if (foundChrom == chromId1 && foundNorm == wantedNorm && foundUnit == wantedUnit &&
             foundResolution == wantedResolution) {
-            footer.c1NormEntry = indexEntry{filePosition, sizeInBytes};
+            const auto currentPos = this->_fs->tellg();
+            c1Norm = readNormalizationVector(indexEntry{filePosition, sizeInBytes});
+            _fs->seekg(currentPos);
         }
-        if (foundChrom == chromId2 && foundNorm == wantedNorm && foundUnit == wantedUnit &&
-            foundResolution == wantedResolution) {
-            footer.c2NormEntry = indexEntry{filePosition, sizeInBytes};
+        if (chromId1 != chromId2 && foundChrom == chromId2 && foundNorm == wantedNorm &&
+            foundUnit == wantedUnit && foundResolution == wantedResolution) {
+            const auto currentPos = this->_fs->tellg();
+            c2Norm = readNormalizationVector(indexEntry{filePosition, sizeInBytes});
+            _fs->seekg(currentPos);
         }
     }
-    if (!footer.c1NormEntry || !footer.c2NormEntry) {
-        throw std::runtime_error("File did not contain " + to_string(wantedNorm) +
-                                 " normalization vectors for one or both chromosomes at " +
-                                 std::to_string(wantedResolution) + " " + to_string(wantedUnit));
+    if (footer.c1Norm().empty() || footer.c2Norm().empty()) {
+        throw std::runtime_error(
+            fmt::format(FMT_STRING("File did not contain {} normalization vectors for one or both "
+                                   "chromosomes at resolution {} and unit {}"),
+                        wantedNorm, wantedResolution, wantedUnit));
     }
-    return insert_footer_and_return();
-}
 
+    return footer;
+}
+/*
 inline void HiCFileStream::removeCachedFooter(const HiCFooter &footer) {
-    auto it = this->footers_.find(footer);
-    if (it == this->footers_.end()) {
+    auto it = this->_footers.find(footer);
+    if (it == this->_footers.end()) {
         throw std::out_of_range("unable to find footer in cache");
     }
-    this->footers_.erase(it);
+    this->_footers.erase(it);
 }
 
-inline void HiCFileStream::purgeFooterCache() { this->footers_.clear(); }
+inline void HiCFileStream::purgeFooterCache() { this->_footers.clear(); }
+ */
 
 }  // namespace internal
