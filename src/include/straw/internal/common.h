@@ -111,48 +111,6 @@ inline MatrixUnit ParseUnitStr(const std::string &s) {
 
     throw std::runtime_error("Invalid unit \"" + s + "\"");
 }
-/*
-inline std::string to_string(NormalizationMethod n) {
-    switch (n) {
-        case NormalizationMethod::NONE:
-            return "NONE";
-        case NormalizationMethod::VC:
-            return "VC";
-        case NormalizationMethod::VC_SQRT:
-            return "VC_SQRT";
-        case NormalizationMethod::KR:
-            return "KR";
-        case NormalizationMethod::SCALE:
-            return "SCALE";
-    }
-    assert(false);
-    std::abort();
-}
-
-inline std::string to_string(MatrixType t) {
-    switch (t) {
-        case MatrixType::observed:
-            return "observed";
-        case MatrixType::oe:
-            return "oe";
-        case MatrixType::expected:
-            return "expected";
-    }
-    assert(false);
-    std::abort();
-}
-
-inline std::string to_string(MatrixUnit u) {
-    switch (u) {
-        case MatrixUnit::BP:
-            return "BP";
-        case MatrixUnit::FRAG:
-            return "FRAG";
-    }
-    assert(false);
-    std::abort();
-}
- */
 
 namespace internal {
 // Adapted from:
