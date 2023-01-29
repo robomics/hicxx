@@ -5,7 +5,6 @@
 #pragma once
 
 #include <fmt/format.h>
-#include <zlib.h>
 
 #include <algorithm>
 #include <cmath>

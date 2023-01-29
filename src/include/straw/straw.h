@@ -4,7 +4,11 @@
 
 #pragma once
 
+#ifdef STRAW_USE_ZLIBNG
+#include <zlib-ng.h>
+#else
 #include <zlib.h>
+#endif
 
 #include <cstdint>
 #include <filestream/filestream.hpp>
@@ -123,7 +127,11 @@ struct BinaryBuffer {
 };
 
 class HiCFileStream {
+#ifdef STRAW_USE_ZLIBNG
+    using ZStream = std::unique_ptr<zng_stream, decltype(&zng_inflateEnd)>;
+#else
     using ZStream = std::unique_ptr<z_stream, decltype(&inflateEnd)>;
+#endif
     std::shared_ptr<filestream::FileStream> _fs{};
     std::shared_ptr<const HiCHeader> _header{};
     std::string _strbuff{};

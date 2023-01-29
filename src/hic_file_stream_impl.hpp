@@ -4,6 +4,12 @@
 
 #pragma once
 
+#ifdef STRAW_USE_ZLIBNG
+#include <zlib-ng.h>
+#else
+#include <zlib.h>
+#endif
+
 #include <fmt/format.h>
 
 #include <algorithm>
@@ -270,8 +276,20 @@ inline std::int64_t HiCFileStream::masterOffset() const noexcept {
     return _header->masterIndexOffset;
 }
 
+inline const char *strawZError(int status) {
+#ifdef STRAW_USE_ZLIBNG
+    return zng_zError(status);
+#else
+    return zError(status);
+#endif
+}
+
 inline auto HiCFileStream::initZStream() -> ZStream {
+#ifdef STRAW_USE_ZLIBNG
+    ZStream zs(new zng_stream, &zng_inflateEnd);
+#else
     ZStream zs(new z_stream, &inflateEnd);
+#endif
     zs->zalloc = Z_NULL;
     zs->zfree = Z_NULL;
     zs->opaque = Z_NULL;
@@ -279,10 +297,14 @@ inline auto HiCFileStream::initZStream() -> ZStream {
     zs->avail_in = 0;
     zs->next_in = Z_NULL;
 
+#ifdef STRAW_USE_ZLIBNG
+    const auto status = zng_inflateInit(zs.get());
+#else
     const auto status = inflateInit(zs.get());
+#endif
     if (status != Z_OK) {
         throw std::runtime_error(fmt::format(
-            FMT_STRING("failed to initialize zlib decompression stream: {}"), zError(status)));
+            FMT_STRING("failed to initialize zlib decompression stream: {}"), strawZError(status)));
     }
 
     return zs;
@@ -429,10 +451,14 @@ inline void HiCFileStream::readAndInflate(indexEntry idx, std::string &plainText
         _zlibstream->avail_in = static_cast<uInt>(_strbuff.size());
         _zlibstream->next_in = reinterpret_cast<Bytef *>(&*(_strbuff.begin()));
 
+#ifdef STRAW_USE_ZLIBNG
+        auto status = zng_inflateReset(_zlibstream.get());
+#else
         auto status = inflateReset(_zlibstream.get());
+#endif
         if (status != Z_OK) {
             plainTextBuffer.clear();
-            throw std::runtime_error(zError(status));
+            throw std::runtime_error(strawZError(status));
         }
 
         plainTextBuffer.reserve(idx.size * 3);
@@ -444,14 +470,18 @@ inline void HiCFileStream::readAndInflate(indexEntry idx, std::string &plainText
             _zlibstream->next_out =
                 reinterpret_cast<Bytef *>(&*(plainTextBuffer.begin() + current_size));
 
+#ifdef STRAW_USE_ZLIBNG
+            status = zng_inflate(_zlibstream.get(), Z_NO_FLUSH);
+#else
             status = inflate(_zlibstream.get(), Z_NO_FLUSH);
+#endif
             if (status == Z_STREAM_END) {
                 // assert(_zlibstream->avail_in == 0);
                 break;
             }
             if (status != Z_OK) {
                 plainTextBuffer.clear();
-                throw std::runtime_error(zError(status));
+                throw std::runtime_error(strawZError(status));
             }
 
             current_size = plainTextBuffer.size();

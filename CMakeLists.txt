@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 14) # Enable c++14 standard
 
 option(STRAW_BUILD_EXAMPLES "Build straw example(s)" OFF)
 option(STRAW_ENABLE_TESTING "Build unit tests" ON)
+option(STRAW_USE_ZLIBNG "Use zlib-ng instead of zlib for decompression" OFF)
 
 add_library(straw_project_options INTERFACE)
 target_compile_features(straw_project_options INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
