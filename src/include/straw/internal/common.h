@@ -8,7 +8,9 @@
 
 #include <cassert>
 #include <cstdint>
+#include <functional>
 #include <map>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -254,3 +256,6 @@ struct fmt::formatter<MatrixUnit> {
         std::abort();
     }
 };
+
+template <typename T>
+using UniquePtrWithDeleter = std::unique_ptr<T, std::function<void(T *)>>;

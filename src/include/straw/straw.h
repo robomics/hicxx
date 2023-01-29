@@ -127,10 +127,11 @@ struct BinaryBuffer {
 };
 
 class HiCFileStream {
+
 #ifdef STRAW_USE_ZLIBNG
-    using ZStream = std::unique_ptr<zng_stream, decltype(&zng_inflateEnd)>;
+    using ZStream = UniquePtrWithDeleter<zng_stream>
 #else
-    using ZStream = std::unique_ptr<z_stream, decltype(&inflateEnd)>;
+    using ZStream = UniquePtrWithDeleter<z_stream>;
 #endif
     std::shared_ptr<filestream::FileStream> _fs{};
     std::shared_ptr<const HiCHeader> _header{};

@@ -286,9 +286,15 @@ inline const char *strawZError(int status) {
 
 inline auto HiCFileStream::initZStream() -> ZStream {
 #ifdef STRAW_USE_ZLIBNG
-    ZStream zs(new zng_stream, &zng_inflateEnd);
+    ZStream zs(new zng_stream, [&](auto *ptr) {
+        zng_inflateEnd(ptr);
+        delete ptr;
+    });
 #else
-    ZStream zs(new z_stream, &inflateEnd);
+    ZStream zs(new z_stream, [&](auto *ptr) {
+        inflateEnd(ptr);
+        delete ptr;
+    });
 #endif
     zs->zalloc = Z_NULL;
     zs->zfree = Z_NULL;
