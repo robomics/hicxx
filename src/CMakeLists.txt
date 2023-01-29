@@ -48,4 +48,3 @@ target_link_libraries(
               $<IF:$<BOOL:${STRAW_USE_ZLIBNG}>,zlib,ZLIB::ZLIB>)
 
 target_compile_definitions(straw INTERFACE FMT_ENFORCE_COMPILE_STRING $<$<BOOL:${STRAW_USE_ZLIBNG}>:STRAW_USE_ZLIBNG>)
-

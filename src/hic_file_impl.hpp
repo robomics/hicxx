@@ -133,3 +133,46 @@ inline internal::MatrixZoomData HiCFile::getMatrixZoomData(
     return internal::MatrixZoomData(
         _fs, getFooter(chromId1, chromId2, matrixType, norm, unit, resolution));
 }
+
+inline GenomicCoordinates GenomicCoordinates::fromString(std::string coord, bool noChromName) {
+    GenomicCoordinates gc{};
+
+    const auto original_coords = coord;
+
+    if (!noChromName) {
+        auto pos = coord.find(':');
+        if (pos == std::string::npos) {
+            gc.chrom = coord;
+            return gc;
+        }
+
+        gc.chrom = coord.substr(0, pos);
+        coord = coord.substr(pos + 1);
+    }
+
+    auto pos = coord.find('-');
+    if (pos == std::string::npos) {
+        pos = coord.find(':');
+    }
+    if (pos == std::string::npos) {
+        throw std::runtime_error(
+            fmt::format(FMT_STRING("unable to parse coordinate \"{}\""), coord));
+    }
+
+    try {
+        gc.start = std::stoi(coord.substr(0, pos));
+        gc.end = std::stoi(coord.substr(pos + 1));
+        if (gc.start >= gc.end) {
+            throw std::runtime_error(fmt::format(
+                FMT_STRING("invalid coordinate {}: start position >= end position"), coord));
+        }
+        if (gc.start < 0) {
+            throw std::runtime_error(fmt::format(
+                FMT_STRING("invalid coordinate {}: start position is negative"), coord));
+        }
+    } catch (const std::exception& e) {
+        throw std::runtime_error(
+            fmt::format(FMT_STRING("unable to parse coordinate \"{}\": {}"), coord, e.what()));
+    }
+    return gc;
+}

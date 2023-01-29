@@ -67,36 +67,20 @@ inline double MatrixZoomData::avgCount() const noexcept {
     return (_sumCount / numBins1()) / numBins2();  // <= trying to avoid overflows
 }
 
+inline void MatrixZoomData::fetch(std::vector<contactRecord> &buffer) {
+    return fetch(0, chrom1().length, 0, chrom2().length, buffer);
+}
+
 inline void MatrixZoomData::fetch(const std::string &coord, std::vector<contactRecord> &buffer) {
     return fetch(coord, coord, buffer);
 }
 
 inline void MatrixZoomData::fetch(const std::string &coord1, const std::string &coord2,
                                   std::vector<contactRecord> &buffer) {
-    auto parse_coords =
-        [](const std::string &coord) {  // TODO this should be a free-standing function
-            try {
-                auto sep_pos = std::min(coord.find('-'), coord.find(':'));
-                if (sep_pos == std::string::npos) {
-                    throw std::invalid_argument("missing position delimiter");
-                }
+    auto coord1_ = GenomicCoordinates::fromString(coord1, true);
+    auto coord2_ = GenomicCoordinates::fromString(coord2, true);
 
-                const auto pos1 = std::stoll(coord.substr(0, sep_pos));
-                const auto pos2 = std::stoll(coord.substr(sep_pos + 1));
-                if (pos1 > pos2) {
-                    throw std::invalid_argument("pos1 > pos2");
-                }
-                return std::make_pair(pos1, pos2);
-            } catch (const std::exception &e) {
-                throw std::runtime_error(fmt::format(
-                    FMT_STRING("Unable to parse genomic coordinates \"{}\": {}"), coord, e.what()));
-            }
-        };
-
-    const auto coord1_ = parse_coords(coord1);
-    const auto coord2_ = parse_coords(coord2);
-
-    return fetch(coord1_.first, coord1_.second, coord2_.first, coord2_.second, buffer);
+    return fetch(coord1_.start, coord1_.end, coord2_.start, coord2_.end, buffer);
 }
 
 inline void MatrixZoomData::fetch(std::int64_t start, std::int64_t end,
@@ -147,6 +131,61 @@ inline void MatrixZoomData::fetch(std::int64_t start1, std::int64_t end1, std::i
                 buffer.emplace_back(std::move(record));
             }
         }
+    }
+}
+
+inline void MatrixZoomData::fetch(std::vector<std::vector<float>> &buffer) {
+    return fetch(0, chrom1().length, 0, chrom2().length, buffer);
+}
+
+inline void MatrixZoomData::fetch(const std::string &coord,
+                                  std::vector<std::vector<float>> &buffer) {
+    return fetch(coord, coord, buffer);
+}
+
+inline void MatrixZoomData::fetch(std::int64_t start, std::int64_t end,
+                                  std::vector<std::vector<float>> &buffer) {
+    return fetch(start, end, start, end, buffer);
+}
+
+inline void MatrixZoomData::fetch(const std::string &coord1, const std::string &coord2,
+                                  std::vector<std::vector<float>> &buffer) {
+    const auto coord1_ = GenomicCoordinates::fromString(coord1, true);
+    const auto coord2_ = GenomicCoordinates::fromString(coord2, true);
+
+    return fetch(coord1_.start, coord1_.end, coord2_.start, coord2_.end, buffer);
+}
+
+inline void MatrixZoomData::fetch(std::int64_t start1, std::int64_t end1, std::int64_t start2,
+                                  std::int64_t end2, std::vector<std::vector<float>> &buffer) {
+    const auto records = [&]() {
+        std::vector<contactRecord> records_;
+        fetch(start1, end1, start2, end2, records_);
+        return records_;
+    }();
+
+    // We resize the buffer here so that we let fetch() deal with invalid queries
+    const auto nRows = (end1 - start1 + resolution() - 1) / resolution();
+    const auto nCols = (end2 - start2 + resolution() - 1) / resolution();
+
+    buffer.resize(nRows);
+    for (auto &row : buffer) {
+        row.clear();
+        row.resize(nCols, 0.0F);
+    }
+
+    if (records.empty()) {
+        return;
+    }
+
+    const auto rowOffset = start1 / resolution();
+    const auto colOffset = start2 / resolution();
+    for (const auto& record: records) {
+        const auto i = record.binY - rowOffset;
+        const auto j = record.binX - colOffset;
+        assert(i >= 0);
+        assert(j >= 0);
+        buffer[i][j] = record.counts;
     }
 }
 

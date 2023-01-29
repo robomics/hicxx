@@ -220,6 +220,7 @@ class MatrixZoomData {
 
     inline double avgCount() const noexcept;
 
+    void fetch(std::vector<contactRecord> &buffer);
     void fetch(const std::string &coord, std::vector<contactRecord> &buffer);
     void fetch(std::int64_t start, std::int64_t end, std::vector<contactRecord> &buffer);
 
@@ -228,10 +229,14 @@ class MatrixZoomData {
     void fetch(std::int64_t start1, std::int64_t end1, std::int64_t start2, std::int64_t end2,
                std::vector<contactRecord> &buffer);
 
-    std::vector<std::vector<float>> getRecordsAsMatrix(std::int64_t gx0, std::int64_t gx1,
-                                                       std::int64_t gy0, std::int64_t gy1);
+    void fetch(std::vector<std::vector<float>> &buffer);
+    void fetch(const std::string &coord, std::vector<std::vector<float>> &buffer);
+    void fetch(std::int64_t start, std::int64_t end, std::vector<std::vector<float>> &buffer);
 
-    std::int64_t getNumberOfTotalRecords();
+    void fetch(const std::string &coord1, const std::string &coord2,
+               std::vector<std::vector<float>> &buffer);
+    void fetch(std::int64_t start1, std::int64_t end1, std::int64_t start2, std::int64_t end2,
+               std::vector<std::vector<float>> &buffer);
 
    private:
     static BlockMap readBlockMap(HiCFileStream &fs, const HiCFooter &footer);
@@ -307,11 +312,14 @@ class HiCFile {
                                                          MatrixType matrixType,
                                                          NormalizationMethod norm, MatrixUnit unit,
                                                          std::int32_t resolution);
-    static std::int64_t readTotalFileSize(const std::string &url);
+};
 
-    auto readHeader(std::istream &fin, std::int64_t &masterIndexPosition, std::string &genomeID,
-                    std::int32_t &numChromosomes, std::int32_t &version, std::int64_t &nviPosition,
-                    std::int64_t &nviLength) -> ChromosomeMap;
+struct GenomicCoordinates {
+    std::string chrom;
+    std::int32_t start;
+    std::int32_t end;
+
+    static GenomicCoordinates fromString(std::string coord, bool noChromName = false);
 };
 
 std::map<std::int32_t, indexEntry> readMatrixZoomData(std::istream &fin, const std::string &myunit,
