@@ -136,7 +136,7 @@ inline internal::MatrixZoomData HiCFile::getMatrixZoomData(
 inline GenomicCoordinates GenomicCoordinates::fromString(std::string coord, bool noChromName) {
     GenomicCoordinates gc{};
 
-    const auto original_coords = coord;
+    const auto original_coord = coord;
 
     if (!noChromName) {
         auto pos = coord.find(':');
@@ -159,8 +159,9 @@ inline GenomicCoordinates GenomicCoordinates::fromString(std::string coord, bool
     }
 
     try {
+        std::size_t tail{0};
         gc.start = std::stoi(coord.substr(0, pos));
-        gc.end = std::stoi(coord.substr(pos + 1));
+        gc.end = std::stoi(coord.substr(pos + 1), &tail);
         if (gc.start >= gc.end) {
             throw std::runtime_error(fmt::format(
                 FMT_STRING("invalid coordinate {}: start position >= end position"), coord));
@@ -169,9 +170,13 @@ inline GenomicCoordinates GenomicCoordinates::fromString(std::string coord, bool
             throw std::runtime_error(fmt::format(
                 FMT_STRING("invalid coordinate {}: start position is negative"), coord));
         }
+        coord = coord.substr(pos + 1);
+        if (tail != coord.size()) {
+            throw std::runtime_error(fmt::format(FMT_STRING("unable to parse \"{}\""), coord));
+        }
     } catch (const std::exception& e) {
-        throw std::runtime_error(
-            fmt::format(FMT_STRING("unable to parse coordinate \"{}\": {}"), coord, e.what()));
+        throw std::runtime_error(fmt::format(FMT_STRING("unable to parse coordinate \"{}\": {}"),
+                                             original_coord, e.what()));
     }
     return gc;
 }
