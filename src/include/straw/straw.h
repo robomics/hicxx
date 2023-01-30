@@ -129,7 +129,7 @@ struct BinaryBuffer {
 class HiCFileStream {
 
 #ifdef STRAW_USE_ZLIBNG
-    using ZStream = UniquePtrWithDeleter<zng_stream>
+    using ZStream = UniquePtrWithDeleter<zng_stream>;
 #else
     using ZStream = UniquePtrWithDeleter<z_stream>;
 #endif
