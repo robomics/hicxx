@@ -14,7 +14,7 @@ FetchContent_MakeAvailable(Catch2)
 include(CTest)
 include(Catch)
 
-add_executable(test_main hic_file_test.cpp hic_file_stream_test.cpp)
+add_executable(test_main hic_file_test.cpp hic_file_stream_test.cpp matrix_zoom_data_test.cpp)
 
 target_link_libraries(test_main PRIVATE straw_project_options straw Catch2::Catch2WithMain)
 
