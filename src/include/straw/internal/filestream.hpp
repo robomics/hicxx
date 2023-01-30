@@ -12,6 +12,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <variant>
 #include <vector>
 
@@ -30,104 +31,107 @@ class RemoteFileStream {
     CURL_ptr handle_{};
     std::string buffer_{};
     std::size_t chunk_offset_{};
-    std::streampos stream_pos_{};
-    std::streamsize stream_size_{};
+    std::size_t stream_pos_{};
+    std::size_t stream_size_{};
 
    public:
     RemoteFileStream() = default;
     explicit RemoteFileStream(std::string url, std::size_t chunk_size = 64 * 1024,
                               std::string agent = "straw");
 
-    const std::string &url() const noexcept;
-    std::streamsize size() const noexcept;
+    [[nodiscard]] const std::string &url() const noexcept;
+    [[nodiscard]] std::size_t size() const noexcept;
 
     void seekg(std::streamoff offset, std::ios::seekdir way = std::ios::beg);
-    std::streampos tellg() const noexcept;
-    bool eof() const noexcept;
+    [[nodiscard]] std::size_t tellg() const noexcept;
+    [[nodiscard]] bool eof() const noexcept;
 
-    void read(std::string &buffer, std::streamsize count);
-    void read(char *buffer, std::streamsize count);
+    void read(std::string &buffer, std::size_t count);
+    void read(char *buffer, std::size_t count);
 
     template <typename T, typename std::enable_if<std::is_fundamental<T>::value>::type * = nullptr>
-    T read();
+    [[nodiscard]] T read();
     template <typename T, typename std::enable_if<std::is_fundamental<T>::value>::type * = nullptr>
     void read(T &buffer);
 
     template <typename T, typename std::enable_if<std::is_fundamental<T>::value>::type * = nullptr>
     void read(std::vector<T> &buffer);
     template <typename T, typename std::enable_if<std::is_fundamental<T>::value>::type * = nullptr>
-    std::vector<T> read(std::size_t size);
+    [[nodiscard]] std::vector<T> read(std::size_t size);
 
-    void append(std::string &buffer, std::streamsize count);
+    void append(std::string &buffer, std::size_t count);
 
     bool getline(std::string &buffer, char delim = '\n');
-    std::string getline(char delim = '\n');
+    [[nodiscard]] std::string getline(char delim = '\n');
 
    private:
-    std::streampos new_pos(std::streamoff offset, std::ios::seekdir way);
-    std::size_t available_bytes() const noexcept;
+    [[nodiscard]] std::streampos new_pos(std::streamoff offset, std::ios::seekdir way);
+    [[nodiscard]] std::size_t available_bytes() const noexcept;
 
-    std::streampos first_chunk_pos() const noexcept;
-    std::streampos last_chunk_pos() const noexcept;
+    [[nodiscard]] std::size_t first_chunk_pos() const noexcept;
+    [[nodiscard]] std::size_t last_chunk_pos() const noexcept;
 
-    char *chunk_begin() noexcept;
-    const char *chunk_begin() const noexcept;
+    [[nodiscard]] char *chunk_begin() noexcept;
+    [[nodiscard]] const char *chunk_begin() const noexcept;
 
-    char *chunk_current() noexcept;
-    const char *chunk_current() const noexcept;
+    [[nodiscard]] char *chunk_current() noexcept;
+    [[nodiscard]] const char *chunk_current() const noexcept;
 
-    char *chunk_end() noexcept;
-    const char *chunk_end() const noexcept;
+    [[nodiscard]] char *chunk_end() noexcept;
+    [[nodiscard]] const char *chunk_end() const noexcept;
 
     void fetch_next_chunk();
-    std::streampos eof_pos() const noexcept;
+    [[nodiscard]] std::size_t eof_pos() const noexcept;
     void mark_eof() noexcept;
     // void reserve_buffer(std::size_t new_size);
     static std::size_t write_memory_callback(void *contents, std::size_t size, std::size_t nmemb,
                                              void *userp) noexcept;
-    static auto init_CURL(const std::string &url, const std::string &agent) -> CURL_ptr;
-    static std::streamsize get_stream_size(const std::string &url, const std::string &agent);
+    [[nodiscard]] static auto init_CURL(const std::string &url, const std::string &agent)
+        -> CURL_ptr;
+    [[nodiscard]] static std::size_t get_stream_size(const std::string &url,
+                                                     const std::string &agent);
 };
 #endif
 
 class LocalFileStream {
     std::string path_{};
     mutable std::ifstream handle_{};
-    std::streamsize file_size_{};
+    std::size_t file_size_{};
 
    public:
     LocalFileStream() = default;
     explicit LocalFileStream(std::string path);
 
-    const std::string &path() const noexcept;
-    const std::string &url() const noexcept;
-    std::streamsize size() const;
+    [[nodiscard]] const std::string &path() const noexcept;
+    [[nodiscard]] const std::string &url() const noexcept;
+    [[nodiscard]] std::size_t size() const;
 
     void seekg(std::streamoff offset, std::ios::seekdir way = std::ios::beg);
-    std::streampos tellg() const noexcept;
-    bool eof() const noexcept;
+    [[nodiscard]] std::size_t tellg() const noexcept;
+    [[nodiscard]] bool eof() const noexcept;
 
-    void read(std::string &buffer, std::streamsize count);
-    void read(char *buffer, std::streamsize count);
+    void read(std::string &buffer, std::size_t count);
+    void read(char *buffer, std::size_t count);
 
     template <typename T, typename std::enable_if<std::is_fundamental<T>::value>::type * = nullptr>
-    T read();
+    [[nodiscard]] T read();
     template <typename T, typename std::enable_if<std::is_fundamental<T>::value>::type * = nullptr>
     void read(T &buffer);
 
     template <typename T, typename std::enable_if<std::is_fundamental<T>::value>::type * = nullptr>
     void read(std::vector<T> &buffer);
     template <typename T, typename std::enable_if<std::is_fundamental<T>::value>::type * = nullptr>
-    std::vector<T> read(std::size_t size);
+    [[nodiscard]] std::vector<T> read(std::size_t size);
 
-    void append(std::string &buffer, std::streamsize count);
+    void append(std::string &buffer, std::size_t count);
 
     bool getline(std::string &buffer, char delim = '\n');
-    std::string getline(char delim = '\n');
+    [[nodiscard]] std::string getline(char delim = '\n');
 
    private:
-    std::streampos new_pos(std::streamoff offset, std::ios::seekdir way);
-    static std::ifstream open_file(const std::string &path, std::ifstream::openmode mode);
+    [[nodiscard]] std::streampos new_pos(std::streamoff offset, std::ios::seekdir way);
+    [[nodiscard]] static std::ifstream open_file(const std::string &path,
+                                                 std::ifstream::openmode mode);
 };
 }  // namespace internal
 
@@ -153,14 +157,14 @@ class FileStream {
     bool is_remote() const noexcept;
 
     const std::string &url() const noexcept;
-    std::streamsize size() const noexcept;
+    std::size_t size() const noexcept;
 
     void seekg(std::streamoff offset, std::ios::seekdir way = std::ios::beg);
-    std::streampos tellg() const noexcept;
+    std::size_t tellg() const noexcept;
     bool eof() const noexcept;
 
-    void read(std::string &buffer, std::streamsize count);
-    void read(char *buffer, std::streamsize count);
+    void read(std::string &buffer, std::size_t count);
+    void read(char *buffer, std::size_t count);
 
     template <typename T, typename std::enable_if<std::is_fundamental<T>::value>::type * = nullptr>
     T read();
@@ -172,7 +176,7 @@ class FileStream {
     template <typename T, typename std::enable_if<std::is_fundamental<T>::value>::type * = nullptr>
     std::vector<T> read(std::size_t size);
 
-    void append(std::string &buffer, std::streamsize count);
+    void append(std::string &buffer, std::size_t count);
 
     bool getline(std::string &buffer, char delim = '\n');
     std::string getline(char delim = '\n');

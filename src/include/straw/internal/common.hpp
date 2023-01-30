@@ -85,7 +85,7 @@ enum class NormalizationMethod { NONE, VC, VC_SQRT, KR, SCALE };
 enum class MatrixType { observed, oe, expected };
 enum class MatrixUnit { BP, FRAG };
 
-inline NormalizationMethod ParseNormStr(const std::string &s) {
+[[nodiscard]] inline NormalizationMethod ParseNormStr(const std::string &s) {
     if (s == "NONE") {
         return NormalizationMethod::NONE;
     }
@@ -108,7 +108,7 @@ inline NormalizationMethod ParseNormStr(const std::string &s) {
     throw std::runtime_error("Invalid normalization \"" + s + "\"");
 }
 
-inline MatrixType ParseMatrixTypeStr(const std::string &s) {
+[[nodiscard]] inline MatrixType ParseMatrixTypeStr(const std::string &s) {
     if (s == "observed") {
         return MatrixType::observed;
     }
@@ -122,7 +122,7 @@ inline MatrixType ParseMatrixTypeStr(const std::string &s) {
     throw std::runtime_error("Invalid matrix type \"" + s + "\"");
 }
 
-inline MatrixUnit ParseUnitStr(const std::string &s) {
+[[nodiscard]] inline MatrixUnit ParseUnitStr(const std::string &s) {
     if (s == "BP") {
         return MatrixUnit::BP;
     }
@@ -138,12 +138,12 @@ namespace internal {
 // https://www.boost.org/doc/libs/1_37_0/doc/html/hash/reference.html#boost.hash_combine
 
 template <typename T>
-inline std::size_t hash_combine(std::size_t seed, const T &v) {
+[[nodiscard]] inline std::size_t hash_combine(std::size_t seed, const T &v) {
     seed ^= std::hash<T>{}(v) + 0x9e3779b9 + (seed << 6U) + (seed >> 2U);
     return seed;
 }
 template <typename T, typename... Args>
-inline std::size_t hash_combine(std::size_t seed, const T &v, Args... args) {
+[[nodiscard]] inline std::size_t hash_combine(std::size_t seed, const T &v, Args... args) {
     seed ^= std::hash<T>{}(v) + 0x9e3779b9 + (seed << 6U) + (seed >> 2U);
     return hash_combine(seed, args...);
 }
@@ -236,7 +236,8 @@ struct GenomicCoordinates {
     std::int32_t start;
     std::int32_t end;
 
-    inline static GenomicCoordinates fromString(std::string coord, bool noChromName = false) {
+    [[nodiscard]] inline static GenomicCoordinates fromString(std::string coord,
+                                                              bool noChromName = false) {
         GenomicCoordinates gc{};
 
         const auto original_coord = coord;
@@ -284,3 +285,13 @@ struct GenomicCoordinates {
         return gc;
     }
 };
+
+// to avoid useless casts (see https://github.com/nlohmann/json/issues/2893#issuecomment-889152324)
+template <class T, class U>
+[[maybe_unused]] [[nodiscard]] constexpr T conditional_static_cast(U value) {
+    if constexpr (std::is_same_v<T, U>) {
+        return value;
+    } else {
+        return static_cast<T>(value);
+    }
+}

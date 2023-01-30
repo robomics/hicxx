@@ -18,46 +18,45 @@ namespace internal::filestream::internal {
 inline LocalFileStream::LocalFileStream(std::string path)
     : path_(std::move(path)),
       handle_(open_file(path_, std::ios::binary | std::ios::ate)),
-      file_size_(handle_.tellg()) {
+      file_size_(static_cast<std::size_t>(handle_.tellg())) {
     handle_.seekg(std::ios::beg);
 }
 
 inline const std::string &LocalFileStream::path() const noexcept { return this->path_; }
 inline const std::string &LocalFileStream::url() const noexcept { return this->path(); }
 
-inline std::streamsize LocalFileStream::size() const { return this->file_size_; }
+inline std::size_t LocalFileStream::size() const { return this->file_size_; }
 
 inline void LocalFileStream::seekg(std::streamoff offset, std::ios::seekdir way) {
     const auto new_pos = this->new_pos(offset, way);
-    if (new_pos < 0 || new_pos >= this->size() + 1) {
+    if (new_pos < 0 || new_pos >= std::int64_t(this->size() + 1)) {
         throw std::runtime_error("caught an attempt of out-of-bound read");
     }
     this->handle_.seekg(new_pos, std::ios::beg);
 }
 
-inline std::streampos LocalFileStream::tellg() const noexcept { return this->handle_.tellg(); }
+inline std::size_t LocalFileStream::tellg() const noexcept {
+    return static_cast<std::size_t>(this->handle_.tellg());
+}
 
 inline bool LocalFileStream::eof() const noexcept { return this->handle_.eof(); }
 
-inline void LocalFileStream::read(std::string &buffer, std::streamsize count) {
-    assert(count >= 0);
+inline void LocalFileStream::read(std::string &buffer, std::size_t count) {
     buffer.resize(count);
     if (count > 0) {
         return this->read(&buffer.front(), count);
     }
 }
 
-inline void LocalFileStream::read(char *buffer, std::streamsize count) {
-    assert(count >= 0);
-    this->handle_.read(buffer, count);
+inline void LocalFileStream::read(char *buffer, std::size_t count) {
+    this->handle_.read(buffer, std::int64_t(count));
 }
 
-inline void LocalFileStream::append(std::string &buffer, std::streamsize count) {
-    assert(count >= 0);
+inline void LocalFileStream::append(std::string &buffer, std::size_t count) {
     const auto buff_size = buffer.size();
     buffer.resize(buffer.size() + count);
 
-    this->handle_.read(&(*buffer.begin()) + buff_size, count);
+    this->handle_.read(&(*buffer.begin()) + buff_size, std::int64_t(count));
 }
 
 inline bool LocalFileStream::getline(std::string &buffer, char delim) {
@@ -113,9 +112,9 @@ inline std::streampos LocalFileStream::new_pos(std::streamoff offset, std::ios::
         case std::ios::beg:
             return static_cast<std::streampos>(offset);
         case std::ios::cur:
-            return this->tellg() + offset;
+            return std::int64_t(this->tellg()) + offset;
         case std::ios::end:
-            return static_cast<std::streampos>(this->file_size_ + offset);
+            return std::int64_t(this->file_size_) + offset;
         default:
             assert(false);
             std::abort();

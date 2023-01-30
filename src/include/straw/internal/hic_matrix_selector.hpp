@@ -29,7 +29,7 @@ class MatrixZoomData {
     std::shared_ptr<HiCFileStream> _fs;
     std::shared_ptr<const HiCFooter> _footer;
     BlockMap _blockMap{};
-    std::set<std::int32_t> _blockNumberBuff{};
+    std::set<std::size_t> _blockNumberBuff{};
     std::vector<contactRecord> _contactRecordBuff{};
     BinaryBuffer _buffer{};
 
@@ -37,24 +37,24 @@ class MatrixZoomData {
     MatrixZoomData() = delete;
     MatrixZoomData(std::shared_ptr<HiCFileStream> fs, std::shared_ptr<const HiCFooter> footer);
 
-    const chromosome &chrom1() const noexcept;
-    const chromosome &chrom2() const noexcept;
+    [[nodiscard]] const chromosome &chrom1() const noexcept;
+    [[nodiscard]] const chromosome &chrom2() const noexcept;
 
-    std::int32_t resolution() const noexcept;
-    MatrixType matrixType() const noexcept;
-    NormalizationMethod normalizationMethod() const noexcept;
-    MatrixUnit matrixUnit() const noexcept;
+    [[nodiscard]] std::int64_t resolution() const noexcept;
+    [[nodiscard]] MatrixType matrixType() const noexcept;
+    [[nodiscard]] NormalizationMethod normalizationMethod() const noexcept;
+    [[nodiscard]] MatrixUnit matrixUnit() const noexcept;
 
-    std::int32_t numBins1() const noexcept;
-    std::int32_t numBins2() const noexcept;
+    [[nodiscard]] std::int64_t numBins1() const noexcept;
+    [[nodiscard]] std::int64_t numBins2() const noexcept;
 
-    bool isIntra() const noexcept;
-    bool isInter() const noexcept;
+    [[nodiscard]] bool isIntra() const noexcept;
+    [[nodiscard]] bool isInter() const noexcept;
 
-    const std::vector<double> &chrom1Norm() const noexcept;
-    const std::vector<double> &chrom2Norm() const noexcept;
+    [[nodiscard]] const std::vector<double> &chrom1Norm() const noexcept;
+    [[nodiscard]] const std::vector<double> &chrom2Norm() const noexcept;
 
-    inline double avgCount() const;
+    [[nodiscard]] inline double avgCount() const;
 
     void fetch(std::vector<contactRecord> &buffer);
     void fetch(const std::string &coord, std::vector<contactRecord> &buffer);
@@ -75,12 +75,12 @@ class MatrixZoomData {
                std::vector<std::vector<float>> &buffer);
 
    private:
-    static BlockMap readBlockMap(HiCFileStream &fs, const HiCFooter &footer);
+    [[nodiscard]] static BlockMap readBlockMap(HiCFileStream &fs, const HiCFooter &footer);
 
     void readBlockNumbers(std::int64_t bin1, std::int64_t bin2, std::int64_t bin3,
-                          std::int64_t bin4, std::set<std::int32_t> &buffer) const;
+                          std::int64_t bin4, std::set<std::size_t> &buffer) const;
     void readBlockNumbersV9Intra(std::int64_t bin1, std::int64_t bin2, std::int64_t bin3,
-                                 std::int64_t bin4, std::set<std::int32_t> &buffer) const;
+                                 std::int64_t bin4, std::set<std::size_t> &buffer) const;
     void readBlockOfInteractions(indexEntry idx, std::vector<contactRecord> &buffer);
     void processInteraction(contactRecord &record);
     static void readBlockOfInteractionsV6(BinaryBuffer &src, std::vector<contactRecord> &dest);

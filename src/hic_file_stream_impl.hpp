@@ -76,14 +76,14 @@ inline std::int32_t HiCFileStream::version() const noexcept {
 }
 
 inline void HiCFileStream::discardExpectedVector(std::int64_t nValues) {
-    const auto elementSize = version() > 8 ? sizeof(float) : sizeof(double);
+    const std::int64_t elementSize = version() > 8 ? sizeof(float) : sizeof(double);
     _fs->seekg(nValues * elementSize, std::ios::cur);
 }
 
 inline std::vector<double> HiCFileStream::readExpectedVector(std::int64_t nValues) {
-    std::vector<double> initialExpectedValues(nValues);
+    std::vector<double> initialExpectedValues(static_cast<std::size_t>(nValues));
     if (version() > 8) {
-        std::vector<float> tmpbuff(nValues);
+        std::vector<float> tmpbuff(static_cast<std::size_t>(nValues));
         _fs->read(tmpbuff);
         std::transform(tmpbuff.begin(), tmpbuff.end(), initialExpectedValues.begin(),
                        [](float n) { return static_cast<double>(n); });
@@ -100,9 +100,9 @@ inline std::vector<double> HiCFileStream::readExpectedVector(std::int64_t nValue
 inline std::vector<double> HiCFileStream::readNormalizationFactors(std::int32_t wantedChrom) {
     const auto nFactors = _fs->read<std::int32_t>();
     std::vector<double> normFactors{};
-    auto readFactor = [this]() -> double {
+    auto readFactor = [this]() {
         if (version() > 8) {
-            return _fs->read<float>();
+            return static_cast<double>(_fs->read<float>());
         }
         return _fs->read<double>();
     };
@@ -145,7 +145,7 @@ inline std::vector<double> HiCFileStream::readNormalizationVector(indexEntry cNo
 }
 
 inline void HiCFileStream::discardNormalizationFactors(std::int32_t wantedChrom) {
-    (void)readNormalizationFactors(wantedChrom);
+    std::ignore = readNormalizationFactors(wantedChrom);
 }
 
 inline MatrixType HiCFileStream::readMatrixType(filestream::FileStream &fs, std::string &buff) {
@@ -233,7 +233,7 @@ inline auto HiCFileStream::initZStream() -> ZStream {
 
 inline void HiCFileStream::readBlockMap(std::int64_t fileOffset, const chromosome &chrom1,
                                         const chromosome &chrom2, MatrixUnit wantedUnit,
-                                        std::int32_t wantedResolution, BlockMap &buffer) {
+                                        std::int64_t wantedResolution, BlockMap &buffer) {
     _fs->seekg(fileOffset);
     auto &blockMap = buffer.blocks;
     blockMap.clear();
@@ -247,23 +247,23 @@ inline void HiCFileStream::readBlockMap(std::int64_t fileOffset, const chromosom
 
     for (std::int32_t i = 0; i < numResolutions; ++i) {
         const auto foundUnit = readMatrixUnit();
-        (void)_fs->read<std::int32_t>();  // oldIndex
+        std::ignore = _fs->read<std::int32_t>();  // oldIndex
         const auto sumCount = _fs->read<float>();
-        (void)_fs->read<float>();  // occupiedCellCount
-        (void)_fs->read<float>();  // stdDev
-        (void)_fs->read<float>();  // percent95
+        std::ignore = _fs->read<float>();  // occupiedCellCount
+        std::ignore = _fs->read<float>();  // stdDev
+        std::ignore = _fs->read<float>();  // percent95
 
-        const auto foundResolution = _fs->read<std::int32_t>();
+        const auto foundResolution = static_cast<std::int64_t>(_fs->read<std::int32_t>());
         const auto blockBinCount = _fs->read<std::int32_t>();
         const auto blockColumnCount = _fs->read<std::int32_t>();
 
-        const auto nBlocks = static_cast<std::size_t>(_fs->read<std::int32_t>());
+        const auto nBlocks = static_cast<std::int64_t>(_fs->read<std::int32_t>());
 
         if (wantedUnit == foundUnit && wantedResolution == foundResolution) {
-            for (std::size_t j = 0; j < nBlocks; ++j) {
+            for (std::int64_t j = 0; j < nBlocks; ++j) {
                 const auto key = _fs->read<std::int32_t>();
                 indexEntry index{_fs->read<std::int64_t>(), _fs->read<std::int32_t>()};
-                assert(index.position + index.size < _fs->size());
+                assert(index.position + index.size < static_cast<std::int32_t>(_fs->size()));
                 blockMap.emplace(key, std::move(index));
             }
             buffer.blockBinCount = blockBinCount;
@@ -272,7 +272,7 @@ inline void HiCFileStream::readBlockMap(std::int64_t fileOffset, const chromosom
             return;
         }
 
-        constexpr auto blockSize = sizeof(int32_t) + sizeof(int64_t) + sizeof(int32_t);
+        constexpr std::int64_t blockSize = sizeof(int32_t) + sizeof(int64_t) + sizeof(int32_t);
         _fs->seekg(nBlocks * blockSize, std::ios::cur);
     }
 
@@ -299,7 +299,8 @@ inline HiCHeader HiCFileStream::readHeader(filestream::FileStream &fs) {
                                  " no longer supported");
     }
     fs.read(header.masterIndexOffset);
-    if (header.masterIndexOffset < 0 || header.masterIndexOffset >= fs.size()) {
+    if (header.masterIndexOffset < 0 ||
+        header.masterIndexOffset >= static_cast<std::int64_t>(fs.size())) {
         throw std::runtime_error(
             "Invalid masterOffset index offset. Expected offset between 0 and " +
             std::to_string(fs.size()) + ", found " + std::to_string(header.masterIndexOffset));
@@ -319,8 +320,8 @@ inline HiCHeader HiCFileStream::readHeader(filestream::FileStream &fs) {
 
     // reading and ignoring attribute-value dictionary
     for (std::int32_t i = 0; i < nAttributes; i++) {
-        (void)fs.getline('\0');  // key
-        (void)fs.getline('\0');  // value
+        std::ignore = fs.getline('\0');  // key
+        std::ignore = fs.getline('\0');  // value
     }
 
     // Read chromosomes
@@ -344,7 +345,7 @@ inline HiCHeader HiCFileStream::readHeader(filestream::FileStream &fs) {
     }
 
     // Read resolutions
-    const auto numResolutions = fs.read<std::int32_t>();
+    const auto numResolutions = static_cast<std::size_t>(fs.read<std::int32_t>());
     header.resolutions.resize(numResolutions);
     std::generate(header.resolutions.begin(), header.resolutions.end(), [&]() {
         const auto res = fs.read<std::int32_t>();
@@ -365,9 +366,10 @@ inline void HiCFileStream::readAndInflate(indexEntry idx, std::string &plainText
         // plainTextBuffer is used to store decompressed data
         assert(_zlibstream);
         assert(idx.size > 0);
+        const auto buffSize = static_cast<std::size_t>(idx.size);
 
         _fs->seekg(idx.position);
-        _fs->read(_strbuff, idx.size);
+        _fs->read(_strbuff, buffSize);
 
         _zlibstream->avail_in = static_cast<uInt>(_strbuff.size());
         _zlibstream->next_in = reinterpret_cast<Bytef *>(&*(_strbuff.begin()));
@@ -382,14 +384,14 @@ inline void HiCFileStream::readAndInflate(indexEntry idx, std::string &plainText
             throw std::runtime_error(strawZError(status));
         }
 
-        plainTextBuffer.reserve(idx.size * 3);
+        plainTextBuffer.reserve(buffSize * 3);
         plainTextBuffer.resize(plainTextBuffer.capacity());
-        auto current_size = 0;
+        std::size_t current_size = 0;
 
         while (true) {
             _zlibstream->avail_out = static_cast<uInt>(plainTextBuffer.size() - current_size);
             _zlibstream->next_out =
-                reinterpret_cast<Bytef *>(&*(plainTextBuffer.begin() + current_size));
+                reinterpret_cast<Bytef *>(&*(plainTextBuffer.begin() + std::int64_t(current_size)));
 
 #ifdef STRAW_USE_ZLIBNG
             status = zng_inflate(_zlibstream.get(), Z_NO_FLUSH);
@@ -406,11 +408,11 @@ inline void HiCFileStream::readAndInflate(indexEntry idx, std::string &plainText
             }
 
             current_size = plainTextBuffer.size();
-            plainTextBuffer.resize(current_size + idx.size);
+            plainTextBuffer.resize(current_size + buffSize);
         }
 
         // assert(plainTextBuffer.size() >= _zlibstream->total_out);
-        plainTextBuffer.resize(static_cast<std::size_t>(_zlibstream->total_out));
+        plainTextBuffer.resize(_zlibstream->total_out);
     } catch (const std::exception &e) {
         throw std::runtime_error(fmt::format(FMT_STRING("failed to decompress block at pos {}: {}"),
                                              idx.position, e.what()));
@@ -449,13 +451,13 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
     const auto key = std::to_string(chromId1) + "_" + std::to_string(chromId2);
 
     _fs->seekg(masterOffset());
-    (void)readNValues();  // nBytes
+    std::ignore = readNValues();  // nBytes
 
     auto nEntries = _fs->read<std::int32_t>();
     for (int i = 0; i < nEntries; i++) {
         const auto strbuff = _fs->getline('\0');
         const auto fpos = _fs->read<std::int64_t>();
-        (void)_fs->read<std::int32_t>();  // sizeInBytes
+        std::ignore = _fs->read<std::int32_t>();  // sizeInBytes
         if (strbuff == key) {
             metadata.fileOffset = fpos;
         }
@@ -551,13 +553,13 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
                                      : static_cast<std::int64_t>(_fs->read<std::int32_t>());
         if (foundChrom == chromId1 && foundNorm == wantedNorm && foundUnit == wantedUnit &&
             foundResolution == wantedResolution) {
-            const auto currentPos = this->_fs->tellg();
+            const auto currentPos = static_cast<std::int64_t>(this->_fs->tellg());
             c1Norm = readNormalizationVector(indexEntry{filePosition, sizeInBytes});
             _fs->seekg(currentPos);
         }
         if (chromId1 != chromId2 && foundChrom == chromId2 && foundNorm == wantedNorm &&
             foundUnit == wantedUnit && foundResolution == wantedResolution) {
-            const auto currentPos = this->_fs->tellg();
+            const auto currentPos = static_cast<std::int64_t>(this->_fs->tellg());
             c2Norm = readNormalizationVector(indexEntry{filePosition, sizeInBytes});
             _fs->seekg(currentPos);
         }

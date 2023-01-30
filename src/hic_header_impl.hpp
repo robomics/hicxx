@@ -20,18 +20,14 @@ inline bool HiCHeader::operator!=(const HiCHeader &other) const noexcept {
     return !(*this == other);
 }
 
-inline std::int32_t HiCHeader::nChromosomes() const noexcept {
-    return static_cast<std::int32_t>(chromosomes.size());
-}
+inline std::size_t HiCHeader::nChromosomes() const noexcept { return chromosomes.size(); }
 
-inline std::int32_t HiCHeader::nResolutions() const noexcept {
-    return static_cast<std::int32_t>(resolutions.size());
-}
+inline std::size_t HiCHeader::nResolutions() const noexcept { return resolutions.size(); }
 
 inline const chromosome &HiCHeader::getChromosome(std::int32_t id) const noexcept {
     // Chromosomes are sorted by id, so we can use simple arithmetic on iterators to find the
     // chromosome with the given id
-    assert(id < chromosomes.size());
+    assert(id < static_cast<std::int32_t>(chromosomes.size()));
 
     const auto it = std::next(chromosomes.begin(), id);
     assert(it->second.index == id);

@@ -59,8 +59,8 @@ TEST_CASE("HiCFile footer cache") {
 
     CHECK(f.numCachedFooters() == 0);
     for (const auto res : f.resolutions()) {
-        (void)f.getMatrixZoomData("chr2L", MatrixType::observed, NormalizationMethod::NONE,
-                                  MatrixUnit::BP, res);
+        std::ignore = f.getMatrixZoomData("chr2L", MatrixType::observed, NormalizationMethod::NONE,
+                                          MatrixUnit::BP, res);
     }
 
     CHECK(f.numCachedFooters() == f.resolutions().size());

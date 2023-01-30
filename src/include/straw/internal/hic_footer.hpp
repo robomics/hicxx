@@ -40,25 +40,25 @@ class HiCFooter {
     bool operator==(const HiCFooter &other) const noexcept;
     bool operator!=(const HiCFooter &other) const noexcept;
 
-    constexpr const HiCFooterMetadata &metadata() const noexcept;
-    constexpr HiCFooterMetadata &metadata() noexcept;
+    [[nodiscard]] constexpr const HiCFooterMetadata &metadata() const noexcept;
+    [[nodiscard]] constexpr HiCFooterMetadata &metadata() noexcept;
 
-    constexpr const std::string &url() const noexcept;
-    constexpr MatrixType matrixType() const noexcept;
-    constexpr NormalizationMethod normalization() const noexcept;
-    constexpr MatrixUnit unit() const noexcept;
-    constexpr std::int32_t resolution() const noexcept;
-    constexpr const chromosome &chrom1() const noexcept;
-    constexpr const chromosome &chrom2() const noexcept;
-    constexpr std::int64_t fileOffset() const noexcept;
+    [[nodiscard]] constexpr const std::string &url() const noexcept;
+    [[nodiscard]] constexpr MatrixType matrixType() const noexcept;
+    [[nodiscard]] constexpr NormalizationMethod normalization() const noexcept;
+    [[nodiscard]] constexpr MatrixUnit unit() const noexcept;
+    [[nodiscard]] constexpr std::int64_t resolution() const noexcept;
+    [[nodiscard]] constexpr const chromosome &chrom1() const noexcept;
+    [[nodiscard]] constexpr const chromosome &chrom2() const noexcept;
+    [[nodiscard]] constexpr std::int64_t fileOffset() const noexcept;
 
-    constexpr const std::vector<double> &expectedValues() const noexcept;
-    constexpr const std::vector<double> &c1Norm() const noexcept;
-    constexpr const std::vector<double> &c2Norm() const noexcept;
+    [[nodiscard]] constexpr const std::vector<double> &expectedValues() const noexcept;
+    [[nodiscard]] constexpr const std::vector<double> &c1Norm() const noexcept;
+    [[nodiscard]] constexpr const std::vector<double> &c2Norm() const noexcept;
 
-    constexpr std::vector<double> &expectedValues() noexcept;
-    constexpr std::vector<double> &c1Norm() noexcept;
-    constexpr std::vector<double> &c2Norm() noexcept;
+    [[nodiscard]] constexpr std::vector<double> &expectedValues() noexcept;
+    [[nodiscard]] constexpr std::vector<double> &c1Norm() noexcept;
+    [[nodiscard]] constexpr std::vector<double> &c2Norm() noexcept;
 };
 }  // namespace internal
 

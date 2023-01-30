@@ -12,6 +12,7 @@
 
 #include "catch2/catch_test_macros.hpp"
 #include "straw/internal/filestream.hpp"
+#include "straw/internal/suppress_compiler_warnings.hpp"
 
 using namespace internal::filestream;
 
@@ -30,9 +31,9 @@ constexpr auto* path = path_plaintext;
 static std::string read_file(const std::string& path_) {
     std::ifstream ifs(path_, std::ios::ate);
     REQUIRE(ifs);
-    const auto size = static_cast<std::size_t>(ifs.tellg());
+    const auto size = ifs.tellg();
     ifs.seekg(std::ios::beg);
-    std::string buff(size, '\0');
+    std::string buff(static_cast<std::size_t>(size), '\0');
     ifs.read(&buff.front(), size);
 
     return buff;
@@ -140,14 +141,14 @@ TEST_CASE("Local - read") {
 
     SECTION("seek and read") {
         const auto offset = s.size() - 10;
-        s.seekg(offset);
+        s.seekg(std::int64_t(offset));
         s.read(buffer, 10);
         CHECK(buffer == expected.substr(offset));
     }
 
     SECTION("seek and read out-of-bound") {
         const auto offset = s.size() - 10;
-        s.seekg(offset);
+        s.seekg(std::int64_t(offset));
         CHECK_THROWS(s.read(buffer, 11));
     }
 
@@ -244,6 +245,8 @@ TEST_CASE("Local - read binary") {
     // np.float32, np.float64]:
     //     print(t, np.frombuffer(open("data.zip", "rb").read()[10:18], dtype=t)[0])
 
+    DISABLE_WARNING_PUSH
+    DISABLE_WARNING_USELESS_CAST
     SECTION("uint8") { CHECK(s.read<std::uint8_t>() == std::uint8_t(162)); }
     SECTION("uint16") { CHECK(s.read<std::uint16_t>() == std::uint16_t(42658)); }
     SECTION("uint32") { CHECK(s.read<std::uint32_t>() == std::uint32_t(1433446050)); }
@@ -259,6 +262,7 @@ TEST_CASE("Local - read binary") {
 
     SECTION("char") { CHECK(s.read<char>() == char(162)); }
     SECTION("unsigned char") { CHECK(s.read<unsigned char>() == static_cast<unsigned char>(162)); }
+    DISABLE_WARNING_POP
 
     SECTION("vector") {
         s.seekg(0);

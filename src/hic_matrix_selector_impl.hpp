@@ -40,7 +40,7 @@ inline const chromosome &MatrixZoomData::chrom1() const noexcept { return _foote
 
 inline const chromosome &MatrixZoomData::chrom2() const noexcept { return _footer->chrom2(); }
 
-inline std::int32_t MatrixZoomData::resolution() const noexcept { return _footer->resolution(); }
+inline std::int64_t MatrixZoomData::resolution() const noexcept { return _footer->resolution(); }
 
 inline MatrixType MatrixZoomData::matrixType() const noexcept { return _footer->matrixType(); }
 
@@ -50,11 +50,11 @@ inline NormalizationMethod MatrixZoomData::normalizationMethod() const noexcept 
 
 inline MatrixUnit MatrixZoomData::matrixUnit() const noexcept { return _footer->unit(); }
 
-inline std::int32_t MatrixZoomData::numBins1() const noexcept {
+inline std::int64_t MatrixZoomData::numBins1() const noexcept {
     return (chrom1().length + resolution() - 1) / resolution();
 }
 
-inline std::int32_t MatrixZoomData::numBins2() const noexcept {
+inline std::int64_t MatrixZoomData::numBins2() const noexcept {
     return (chrom2().length + resolution() - 1) / resolution();
 }
 
@@ -72,9 +72,7 @@ inline const std::vector<double> &MatrixZoomData::chrom2Norm() const noexcept {
 
 inline double MatrixZoomData::avgCount() const {
     if (isInter()) {
-        const auto numPixels =
-            static_cast<std::int64_t>(numBins1()) * static_cast<std::int64_t>(numBins2());
-        return _blockMap.sumCount / static_cast<double>(numPixels);
+        return _blockMap.sumCount / static_cast<double>(numBins1() * numBins2());
     }
     throw std::domain_error(
         "MatrixZoomData::avgCount is not implemented for intra-chromosomal matrices");
@@ -140,8 +138,8 @@ inline void MatrixZoomData::fetch(std::int64_t start1, std::int64_t end1, std::i
         readBlockOfInteractions(_blockMap.blocks[blockNumber], _contactRecordBuff);
 
         for (auto &&record : _contactRecordBuff) {
-            record.bin1_start *= resolution();
-            record.bin2_start *= resolution();
+            record.bin1_start *= std::int32_t(resolution());
+            record.bin2_start *= std::int32_t(resolution());
 
             const auto pos1 = record.bin1_start;
             const auto pos2 = record.bin2_start;
@@ -193,8 +191,8 @@ inline void MatrixZoomData::fetch(std::int64_t start1, std::int64_t end1, std::i
     }();
 
     // We resize the buffer here so that we let fetch() deal with invalid queries
-    const auto nRows = (end1 - start1 + resolution() - 1) / resolution();
-    const auto nCols = (end2 - start2 + resolution() - 1) / resolution();
+    const auto nRows = static_cast<std::size_t>((end1 - start1 + resolution() - 1) / resolution());
+    const auto nCols = static_cast<std::size_t>((end2 - start2 + resolution() - 1) / resolution());
 
     buffer.resize(nRows);
     for (auto &row : buffer) {
@@ -206,13 +204,14 @@ inline void MatrixZoomData::fetch(std::int64_t start1, std::int64_t end1, std::i
         return;
     }
 
-    const auto rowOffset = start1 / resolution();
-    const auto colOffset = start2 / resolution();
+    const auto rowOffset = static_cast<std::size_t>(start1 / resolution());
+    const auto colOffset = static_cast<std::size_t>(start2 / resolution());
     for (const auto &record : records) {
-        const auto i = record.bin2_start - rowOffset;
-        const auto j = record.bin1_start - colOffset;
-        assert(i >= 0);
-        assert(j >= 0);
+        assert(std::size_t(record.bin2_start) >= rowOffset);
+        assert(std::size_t(record.bin1_start) >= colOffset);
+        const auto i = std::size_t(record.bin2_start) - rowOffset;
+        const auto j = std::size_t(record.bin1_start) - colOffset;
+
         buffer[i][j] = record.count;
     }
 }
@@ -228,7 +227,7 @@ inline void MatrixZoomData::processInteraction(contactRecord &record) {
     if (!skipNormalization) {
         const auto bin1 = static_cast<std::size_t>(record.bin1_start / resolution());
         const auto bin2 = static_cast<std::size_t>(record.bin2_start / resolution());
-        record.count /= c1Norm[bin1] * c2Norm[bin2];
+        record.count /= static_cast<float>(c1Norm[bin1] * c2Norm[bin2]);
     }
 
     if (matrixType() == MatrixType::observed) {
@@ -237,13 +236,13 @@ inline void MatrixZoomData::processInteraction(contactRecord &record) {
 
     const auto expectedCount = [&]() {
         if (isInter()) {
-            return avgCount();
+            return float(avgCount());
         }
 
         const auto i = static_cast<std::size_t>(std::abs(record.bin1_start - record.bin2_start) /
                                                 resolution());
         assert(i < expected.size());
-        return expected[i];
+        return float(expected[i]);
     }();
 
     if (matrixType() == MatrixType::expected) {
@@ -390,8 +389,8 @@ inline void MatrixZoomData::readBlockOfInteractionsType1(
 
     constexpr auto expectedOffsetV7 = (3 * sizeof(i32)) + (2 * sizeof(char));
     constexpr auto expectedOffsetV8plus = expectedOffsetV7 + (2 * sizeof(char));
-    (void)expectedOffsetV7;
-    (void)expectedOffsetV8plus;
+    std::ignore = expectedOffsetV7;
+    std::ignore = expectedOffsetV8plus;
     assert(src.i == expectedOffsetV7 || src.i == expectedOffsetV8plus);
 
     const auto expectedNumRecords = dest.size();
@@ -409,7 +408,7 @@ inline void MatrixZoomData::readBlockOfInteractionsType1(
         }
     }
 
-    (void)expectedNumRecords;
+    std::ignore = expectedNumRecords;
     assert(expectedNumRecords == dest.size());
 }
 
@@ -433,7 +432,7 @@ inline void MatrixZoomData::readBlockOfInteractionsType2(
                (!i16Counts && !std::isnan(static_cast<f32>(n)));
     };
 
-    dest.reserve(nPts);
+    dest.reserve(static_cast<std::size_t>(nPts));
     dest.clear();
     for (i32 i = 0; i < nPts; ++i) {
         const auto count = src.read<CountType>();
@@ -458,7 +457,7 @@ inline BlockMap MatrixZoomData::readBlockMap(HiCFileStream &fs, const HiCFooter 
 
 inline void MatrixZoomData::readBlockNumbers(std::int64_t bin1, std::int64_t bin2,
                                              std::int64_t bin3, std::int64_t bin4,
-                                             std::set<std::int32_t> &buffer) const {
+                                             std::set<std::size_t> &buffer) const {
     const auto blockBinCount = _blockMap.blockBinCount;
     const auto blockColumnCount = _blockMap.blockColumnCount;
 
@@ -473,9 +472,9 @@ inline void MatrixZoomData::readBlockNumbers(std::int64_t bin1, std::int64_t bin
     // first check the upper triangular matrixType
     for (auto row = row1; row <= row2; ++row) {
         for (auto col = col1; col <= col2; ++col) {
-            buffer.insert(row * blockColumnCount + col);
+            buffer.insert(static_cast<std::size_t>(row * blockColumnCount + col));
             if (checkLowerLeftTri) {
-                buffer.insert(col * blockColumnCount + row);
+                buffer.insert(static_cast<std::size_t>(col * blockColumnCount + row));
             }
         }
     }
@@ -483,16 +482,16 @@ inline void MatrixZoomData::readBlockNumbers(std::int64_t bin1, std::int64_t bin
 
 inline void MatrixZoomData::readBlockNumbersV9Intra(std::int64_t bin1, std::int64_t bin2,
                                                     std::int64_t bin3, std::int64_t bin4,
-                                                    std::set<std::int32_t> &buffer) const {
+                                                    std::set<std::size_t> &buffer) const {
     const auto blockBinCount = _blockMap.blockBinCount;
     const auto blockColumnCount = _blockMap.blockColumnCount;
 
     const auto translatedLowerPAD = (bin1 + bin3) / 2 / blockBinCount;
     const auto translatedHigherPAD = (bin2 + bin4) / 2 / blockBinCount + 1;
     const auto translatedNearerDepth = static_cast<std::int64_t>(
-        std::log2(1.0 + std::abs(bin1 - bin4) / std::sqrt(2.0) / blockBinCount));
+        std::log2(1.0 + double(std::abs(bin1 - bin4)) / std::sqrt(2.0) / blockBinCount));
     const auto translatedFurtherDepth = static_cast<std::int64_t>(
-        std::log2(1.0 + std::abs(bin2 - bin3) / std::sqrt(2.0) / blockBinCount));
+        std::log2(1.0 + double(std::abs(bin2 - bin3)) / std::sqrt(2.0) / blockBinCount));
 
     // because code above assumes above diagonal; but we could be below diagonal
     const auto nearerDepth = [&]() -> std::int64_t {
@@ -508,7 +507,7 @@ inline void MatrixZoomData::readBlockNumbersV9Intra(std::int64_t bin1, std::int6
     buffer.clear();
     for (auto depth = nearerDepth; depth <= furtherDepth; ++depth) {
         for (auto pad = translatedLowerPAD; pad <= translatedHigherPAD; ++pad) {
-            buffer.insert(depth * blockColumnCount + pad);
+            buffer.insert(static_cast<std::size_t>(depth * blockColumnCount + pad));
         }
     }
 }

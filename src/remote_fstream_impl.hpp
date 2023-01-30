@@ -54,10 +54,10 @@ inline auto RemoteFileStream::init_CURL(const std::string &url, const std::strin
     return curl;
 }
 
-inline std::streamsize RemoteFileStream::get_stream_size(const std::string &url,
-                                                         const std::string &agent) {
-    auto discardData = +[](void *buffer, std::size_t size, std::size_t nmemb,
-                           void *userp) -> std::size_t { return size * nmemb; };
+inline std::size_t RemoteFileStream::get_stream_size(const std::string &url,
+                                                     const std::string &agent) {
+    auto discardData = +[]([[maybe_unused]] void *buffer, std::size_t size, std::size_t nmemb,
+                           [[maybe_unused]] void *userp) -> std::size_t { return size * nmemb; };
 
     auto curl = CURL_ptr(curl_easy_init(), &curl_easy_cleanup);
     if (!curl.get()) {
@@ -85,44 +85,46 @@ inline std::streamsize RemoteFileStream::get_stream_size(const std::string &url,
     if (cl == -1) {
         throw std::runtime_error("Unable to fetch content length for " + url);
     }
-    return static_cast<std::streamsize>(cl);
+    return static_cast<std::size_t>(cl);
 }
 
 inline const std::string &RemoteFileStream::url() const noexcept { return this->url_; }
-inline std::streamsize RemoteFileStream::size() const noexcept { return this->stream_size_; }
+inline std::size_t RemoteFileStream::size() const noexcept { return this->stream_size_; }
 
 inline void RemoteFileStream::seekg(std::streamoff offset, std::ios::seekdir way) {
-    const auto new_pos = this->new_pos(offset, way);
-    if (new_pos < 0 || new_pos >= this->eof_pos()) {
-        throw std::runtime_error("caught an attempt of out-of-bound read");
-    }
+    const auto new_pos = [&]() {
+        const auto p = this->new_pos(offset, way);
+        if (p < 0 || static_cast<std::size_t>(p) >= this->eof_pos()) {
+            throw std::runtime_error("caught an attempt of out-of-bound read");
+        }
+        return static_cast<std::size_t>(p);
+    }();
 
     if (new_pos < this->first_chunk_pos() || new_pos >= this->last_chunk_pos()) {
         this->buffer_.clear();
         this->chunk_offset_ = 0;
         this->stream_pos_ = new_pos;
     } else {
-        this->chunk_offset_ = static_cast<std::size_t>(new_pos - this->stream_pos_);
+        this->chunk_offset_ = new_pos - this->stream_pos_;
     }
 }
 
-inline std::streampos RemoteFileStream::tellg() const noexcept {
-    assert(this->stream_pos_ + static_cast<std::streampos>(this->chunk_offset_) <= this->eof_pos());
-    return this->stream_pos_ + static_cast<std::streampos>(this->chunk_offset_);
+inline std::size_t RemoteFileStream::tellg() const noexcept {
+    const auto pos = this->stream_pos_ + this->chunk_offset_;
+    assert(pos <= this->eof_pos());
+    return pos;
 }
 
 inline bool RemoteFileStream::eof() const noexcept { return this->tellg() == this->eof_pos(); }
 
-inline void RemoteFileStream::read(std::string &buffer, std::streamsize count) {
-    assert(count >= 0);
+inline void RemoteFileStream::read(std::string &buffer, std::size_t count) {
     buffer.resize(count);
     if (count > 0) {
         return this->read(&buffer.front(), count);
     }
 }
 
-inline void RemoteFileStream::read(char *buffer, std::streamsize count) {
-    assert(count >= 0);
+inline void RemoteFileStream::read(char *buffer, std::size_t count) {
     if (this->tellg() + count > this->size()) {
         throw std::runtime_error("caught an attempt of out-of-bound read");
     }
@@ -147,8 +149,7 @@ inline void RemoteFileStream::read(char *buffer, std::streamsize count) {
     this->read(buffer, count);
 }
 
-inline void RemoteFileStream::append(std::string &buffer, std::streamsize count) {
-    assert(count >= 0);
+inline void RemoteFileStream::append(std::string &buffer, std::size_t count) {
     if (this->tellg() + count == this->size() + 1) {
         this->mark_eof();
         return;
@@ -243,9 +244,9 @@ inline std::streampos RemoteFileStream::new_pos(std::streamoff offset, std::ios:
         case std::ios::beg:
             return static_cast<std::streampos>(offset);
         case std::ios::cur:
-            return this->tellg() + offset;
+            return std::streampos(std::int64_t(this->tellg())) + offset;
         case std::ios::end:
-            return static_cast<std::streampos>(this->stream_size_ + offset);
+            return std::streampos(std::int64_t(this->stream_size_)) + offset;
         default:
             assert(false);
             std::abort();
@@ -257,12 +258,10 @@ inline std::size_t RemoteFileStream::available_bytes() const noexcept {
     return this->buffer_.size() - this->chunk_offset_;
 }
 
-inline std::streampos RemoteFileStream::first_chunk_pos() const noexcept {
-    return this->stream_pos_;
-}
+inline std::size_t RemoteFileStream::first_chunk_pos() const noexcept { return this->stream_pos_; }
 
-inline std::streampos RemoteFileStream::last_chunk_pos() const noexcept {
-    return this->first_chunk_pos() + static_cast<std::streampos>(this->buffer_.size());
+inline std::size_t RemoteFileStream::last_chunk_pos() const noexcept {
+    return this->first_chunk_pos() + this->buffer_.size();
 }
 
 inline char *RemoteFileStream::chunk_begin() noexcept { return &(*this->buffer_.begin()); }
@@ -294,10 +293,9 @@ inline void RemoteFileStream::fetch_next_chunk() {
         return;
     }
     assert(this->handle_);
-    const auto first = static_cast<std::size_t>(this->tellg());
-    const auto last = std::min(static_cast<size_t>(this->stream_size_),
-                               first + static_cast<std::size_t>(this->buffer_.capacity() - 1));
-    const auto range = std::to_string(first) + "-" + std::to_string(last);
+    const auto first_pos = this->tellg();
+    const auto last_pos = std::min(this->stream_size_, first_pos + this->buffer_.capacity() - 1);
+    const auto range = std::to_string(first_pos) + "-" + std::to_string(last_pos);
 
     curl_easy_setopt(this->handle_.get(), CURLOPT_WRITEDATA,
                      reinterpret_cast<const void *>(&this->buffer_));
@@ -310,10 +308,10 @@ inline void RemoteFileStream::fetch_next_chunk() {
     }
 
     this->chunk_offset_ = 0;
-    this->stream_pos_ = first;
+    this->stream_pos_ = first_pos;
 }
 
-inline std::streampos RemoteFileStream::eof_pos() const noexcept { return this->stream_size_ + 1; }
+inline std::size_t RemoteFileStream::eof_pos() const noexcept { return this->stream_size_ + 1; }
 
 inline void RemoteFileStream::mark_eof() noexcept {
     this->buffer_.clear();

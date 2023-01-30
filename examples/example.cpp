@@ -18,7 +18,7 @@ static std::int32_t getChromSize(const HiCFile& hic, const std::string& chrom_na
         throw std::runtime_error(
             fmt::format(FMT_STRING("Unable to find a chromosome named \"{}\""), chrom_name));
     }
-    return it->second.length;
+    return static_cast<std::int32_t>(it->second.length);
 }
 
 int main(int argc, char** argv) noexcept {

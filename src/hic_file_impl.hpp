@@ -102,11 +102,11 @@ inline internal::MatrixZoomData HiCFile::getMatrixZoomData(
 inline internal::MatrixZoomData HiCFile::getMatrixZoomData(
     std::int32_t chromId1, std::int32_t chromId2, MatrixType matrixType, NormalizationMethod norm,
     MatrixUnit unit, std::int32_t resolution) {
-    if (chromId1 >= chromosomes().size()) {
+    if (chromId1 >= std::int64_t(chromosomes().size())) {
         throw std::runtime_error(
             fmt::format(FMT_STRING("unable to find chromosome corresponding to ID {}"), chromId1));
     }
-    if (chromId2 >= chromosomes().size()) {
+    if (chromId2 >= std::int64_t(chromosomes().size())) {
         throw std::runtime_error(
             fmt::format(FMT_STRING("unable to find chromosome corresponding to ID {}"), chromId2));
     }

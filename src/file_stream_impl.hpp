@@ -53,7 +53,7 @@ inline const std::string &FileStream::url() const noexcept {
                       this->stream_);
 }
 
-inline std::streamsize FileStream::size() const noexcept {
+inline std::size_t FileStream::size() const noexcept {
     return std::visit([](const auto &fs) { return fs.size(); }, this->stream_);
 }
 
@@ -61,7 +61,7 @@ inline void FileStream::seekg(std::streamoff offset, std::ios::seekdir way) {
     return std::visit([&](auto &fs) { return fs.seekg(offset, way); }, this->stream_);
 }
 
-inline std::streampos FileStream::tellg() const noexcept {
+inline std::size_t FileStream::tellg() const noexcept {
     return std::visit([](const auto &fs) { return fs.tellg(); }, this->stream_);
 }
 
@@ -69,15 +69,15 @@ inline bool FileStream::eof() const noexcept {
     return std::visit([](const auto &fs) { return fs.eof(); }, this->stream_);
 }
 
-inline void FileStream::read(std::string &buffer, std::streamsize count) {
+inline void FileStream::read(std::string &buffer, std::size_t count) {
     return std::visit([&](auto &fs) { return fs.read(buffer, count); }, this->stream_);
 }
 
-inline void FileStream::read(char *buffer, std::streamsize count) {
+inline void FileStream::read(char *buffer, std::size_t count) {
     return std::visit([&](auto &fs) { return fs.read(buffer, count); }, this->stream_);
 }
 
-inline void FileStream::append(std::string &buffer, std::streamsize count) {
+inline void FileStream::append(std::string &buffer, std::size_t count) {
     return std::visit([&](auto &fs) { return fs.append(buffer, count); }, this->stream_);
 }
 

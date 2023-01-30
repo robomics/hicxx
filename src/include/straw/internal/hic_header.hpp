@@ -27,10 +27,10 @@ struct HiCHeader {
     bool operator==(const HiCHeader &other) const noexcept;
     bool operator!=(const HiCHeader &other) const noexcept;
 
-    std::int32_t nChromosomes() const noexcept;
-    std::int32_t nResolutions() const noexcept;
+    [[nodiscard]] std::size_t nChromosomes() const noexcept;
+    [[nodiscard]] std::size_t nResolutions() const noexcept;
 
-    const chromosome &getChromosome(std::int32_t id) const noexcept;
+    [[nodiscard]] const chromosome &getChromosome(std::int32_t id) const noexcept;
 };
 
 }  // namespace internal

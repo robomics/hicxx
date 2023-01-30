@@ -42,7 +42,9 @@ constexpr NormalizationMethod HiCFooter::normalization() const noexcept {
     return metadata().normalization;
 }
 constexpr MatrixUnit HiCFooter::unit() const noexcept { return metadata().unit; }
-constexpr std::int32_t HiCFooter::resolution() const noexcept { return metadata().resolution; }
+constexpr std::int64_t HiCFooter::resolution() const noexcept {
+    return std::int64_t(metadata().resolution);
+}
 constexpr const chromosome &HiCFooter::chrom1() const noexcept { return metadata().chrom1; }
 constexpr const chromosome &HiCFooter::chrom2() const noexcept { return metadata().chrom2; }
 constexpr std::int64_t HiCFooter::fileOffset() const noexcept { return metadata().fileOffset; }

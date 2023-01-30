@@ -29,7 +29,7 @@ static std::vector<contactRecord> tail(const std::vector<contactRecord>& buffer,
     REQUIRE(buffer.size() >= n);
 
     std::vector<contactRecord> slice(n);
-    std::copy_n(buffer.end() - n, n, slice.begin());
+    std::copy_n(buffer.end() - std::int32_t(n), n, slice.begin());
     return slice;
 }
 
@@ -184,7 +184,7 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
                                    MatrixUnit::BP, 10000)
                 .fetch("100000-100001", "100000-100001", buffer);
             REQUIRE(buffer.size() == 1);
-            CHECK(buffer.front().count == 13895);
+            CHECK(buffer.front().count == 13895.0F);
         }
 
         SECTION("upper-triangle") {
