@@ -59,6 +59,7 @@ int main(int argc, char** argv) noexcept {
             hic.getMatrixZoomData(coord1.chrom, coord2.chrom, matrixType, norm, unit, resolution);
         std::vector<contactRecord> buffer{};
         selector.fetch(coord1.start, coord1.end, coord2.start, coord2.end, buffer);
+        std::sort(buffer.begin(), buffer.end());
 
         for (const auto& record : buffer) {
             const auto start1 = record.bin1_start;

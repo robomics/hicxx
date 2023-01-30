@@ -221,6 +221,10 @@ inline void MatrixZoomData::processInteraction(contactRecord &record) {
     const auto &c2Norm = _footer->c2Norm();
     const auto &expected = _footer->expectedValues();
 
+    if (record.bin1_start > record.bin2_start) {
+        std::swap(record.bin1_start, record.bin2_start);
+    }
+
     const auto skipNormalization =
         normalizationMethod() == NormalizationMethod::NONE || matrixType() == MatrixType::expected;
 

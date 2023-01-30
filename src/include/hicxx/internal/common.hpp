@@ -40,10 +40,10 @@ struct contactRecord {
     float count{};
 
     constexpr bool operator<(const contactRecord &other) const noexcept {
-        if (bin1_start == other.bin1_start) {
-            return bin2_start < other.bin2_start;
+        if (bin2_start == other.bin2_start) {
+            return bin1_start < other.bin1_start;
         }
-        return bin1_start < other.bin1_start;
+        return bin2_start < other.bin2_start;
     }
     constexpr bool operator==(const contactRecord &other) const noexcept {
         return bin1_start == other.bin1_start && bin2_start == other.bin2_start &&
