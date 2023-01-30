@@ -6,9 +6,10 @@
 
 #include <cassert>
 #include <cstdint>
+#include <functional>
 #include <iterator>
 
-namespace internal {
+namespace hicxx::internal {
 
 constexpr HiCHeader::operator bool() const noexcept { return masterIndexOffset >= 0; }
 
@@ -34,4 +35,11 @@ inline const chromosome &HiCHeader::getChromosome(std::int32_t id) const noexcep
     return it->second;
 }
 
-}  // namespace internal
+}  // namespace hicxx::internal
+
+template <>
+struct std::hash<hicxx::internal::HiCHeader> {
+    inline std::size_t operator()(hicxx::internal::HiCHeader const &h) const noexcept {
+        return hicxx::internal::hash_combine(0, h.url, h.masterIndexOffset);
+    }
+};

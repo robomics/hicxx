@@ -14,6 +14,8 @@
 
 #include "straw/internal/common.hpp"
 
+namespace hicxx {
+
 inline HiCFile::HiCFile(std::string url_)
     : _fs(std::make_shared<internal::HiCFileStream>(std::move(url_))) {}
 
@@ -136,3 +138,5 @@ inline internal::MatrixZoomData HiCFile::getMatrixZoomData(
 inline std::size_t HiCFile::numCachedFooters() const noexcept { return _footers.size(); }
 
 inline void HiCFile::purgeFooterCache() { _footers.clear(); }
+
+}  // namespace hicxx

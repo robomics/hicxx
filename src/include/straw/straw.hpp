@@ -19,6 +19,7 @@
 #include "straw/internal/hic_header.hpp"
 #include "straw/internal/hic_matrix_selector.hpp"
 
+namespace hicxx {
 class HiCFile {
     // clang-format off
     using FooterCacheT =
@@ -72,5 +73,6 @@ class HiCFile {
         std::int32_t chromId1, std::int32_t chromId2, MatrixType matrixType,
         NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution);
 };
+}  // namespace hicxx
 
 #include "../../hic_file_impl.hpp"

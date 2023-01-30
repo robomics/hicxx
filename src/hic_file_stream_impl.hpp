@@ -24,7 +24,7 @@
 #include "straw/internal/common.hpp"
 #include "straw/internal/filestream.hpp"
 
-namespace internal {
+namespace hicxx::internal {
 
 inline HiCFileStream::HiCFileStream(std::string url)
     : _fs(std::make_shared<filestream::FileStream>(HiCFileStream::openStream(std::move(url)))),
@@ -585,4 +585,4 @@ inline void HiCFileStream::removeCachedFooter(const HiCFooter &footer) {
 inline void HiCFileStream::purgeFooterCache() { this->_footers.clear(); }
  */
 
-}  // namespace internal
+}  // namespace hicxx::internal

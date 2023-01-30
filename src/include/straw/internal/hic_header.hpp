@@ -11,7 +11,7 @@
 
 #include "straw/internal/common.hpp"
 
-namespace internal {
+namespace hicxx::internal {
 
 struct HiCHeader {
     std::string url{};
@@ -33,13 +33,6 @@ struct HiCHeader {
     [[nodiscard]] const chromosome &getChromosome(std::int32_t id) const noexcept;
 };
 
-}  // namespace internal
-
-template <>
-struct std::hash<internal::HiCHeader> {
-    inline std::size_t operator()(internal::HiCHeader const &h) const noexcept {
-        return internal::hash_combine(0, h.url, h.masterIndexOffset);
-    }
-};
+}  // namespace hicxx::internal
 
 #include "../../../hic_header_impl.hpp"

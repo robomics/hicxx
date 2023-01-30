@@ -10,6 +10,8 @@
 #include <cstdint>
 #include <string>
 
+using namespace hicxx;
+
 constexpr auto* pathV8 = "test/data/4DNFIZ1ZVXC8.hic8";
 constexpr auto* pathV9 = "test/data/4DNFIZ1ZVXC8.hic9";
 

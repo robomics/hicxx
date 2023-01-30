@@ -16,6 +16,8 @@
 #include <type_traits>
 #include <utility>
 
+namespace hicxx {
+
 // pointer structure for reading blocks or matrices, holds the size and position
 struct indexEntry {
     std::int64_t position{-1};
@@ -71,13 +73,16 @@ struct chromosome {
         return index >= other.index;
     }
 };
+}  // namespace hicxx
 
 template <>
-struct std::hash<chromosome> {
-    inline std::size_t operator()(chromosome const &c) const noexcept {
+struct std::hash<hicxx::chromosome> {
+    inline std::size_t operator()(hicxx::chromosome const &c) const noexcept {
         return std::hash<std::int32_t>{}(c.index);
     }
 };
+
+namespace hicxx {
 
 using ChromosomeMap = std::map<std::string, chromosome>;
 
@@ -154,8 +159,19 @@ inline bool StartsWith(const std::string &s, const std::string &prefix) {
 
 }  // namespace internal
 
+// to avoid useless casts (see https://github.com/nlohmann/json/issues/2893#issuecomment-889152324)
+template <class T, class U>
+[[maybe_unused]] [[nodiscard]] constexpr T conditional_static_cast(U value) {
+    if constexpr (std::is_same_v<T, U>) {
+        return value;
+    } else {
+        return static_cast<T>(value);
+    }
+}
+}  // namespace hicxx
+
 template <>
-struct fmt::formatter<NormalizationMethod> {
+struct fmt::formatter<hicxx::NormalizationMethod> {
     static constexpr auto parse(format_parse_context &ctx) -> decltype(ctx.begin()) {
         if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
             throw fmt::format_error("invalid format");
@@ -164,17 +180,18 @@ struct fmt::formatter<NormalizationMethod> {
     }
 
     template <class FormatContext>
-    static auto format(const NormalizationMethod n, FormatContext &ctx) -> decltype(ctx.out()) {
+    static auto format(const hicxx::NormalizationMethod n, FormatContext &ctx)
+        -> decltype(ctx.out()) {
         switch (n) {
-            case NormalizationMethod::NONE:
+            case hicxx::NormalizationMethod::NONE:
                 return fmt::format_to(ctx.out(), FMT_STRING("NONE"));
-            case NormalizationMethod::VC:
+            case hicxx::NormalizationMethod::VC:
                 return fmt::format_to(ctx.out(), FMT_STRING("VC"));
-            case NormalizationMethod::VC_SQRT:
+            case hicxx::NormalizationMethod::VC_SQRT:
                 return fmt::format_to(ctx.out(), FMT_STRING("VC_SQRT"));
-            case NormalizationMethod::KR:
+            case hicxx::NormalizationMethod::KR:
                 return fmt::format_to(ctx.out(), FMT_STRING("KR"));
-            case NormalizationMethod::SCALE:
+            case hicxx::NormalizationMethod::SCALE:
                 return fmt::format_to(ctx.out(), FMT_STRING("SCALE"));
         }
         assert(false);
@@ -183,7 +200,7 @@ struct fmt::formatter<NormalizationMethod> {
 };
 
 template <>
-struct fmt::formatter<MatrixType> {
+struct fmt::formatter<hicxx::MatrixType> {
     static constexpr auto parse(format_parse_context &ctx) -> decltype(ctx.begin()) {
         if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
             throw fmt::format_error("invalid format");
@@ -192,13 +209,13 @@ struct fmt::formatter<MatrixType> {
     }
 
     template <class FormatContext>
-    static auto format(const MatrixType t, FormatContext &ctx) -> decltype(ctx.out()) {
+    static auto format(const hicxx::MatrixType t, FormatContext &ctx) -> decltype(ctx.out()) {
         switch (t) {
-            case MatrixType::observed:
+            case hicxx::MatrixType::observed:
                 return fmt::format_to(ctx.out(), FMT_STRING("observed"));
-            case MatrixType::oe:
+            case hicxx::MatrixType::oe:
                 return fmt::format_to(ctx.out(), FMT_STRING("oe"));
-            case MatrixType::expected:
+            case hicxx::MatrixType::expected:
                 return fmt::format_to(ctx.out(), FMT_STRING("expected"));
         }
         assert(false);
@@ -207,7 +224,7 @@ struct fmt::formatter<MatrixType> {
 };
 
 template <>
-struct fmt::formatter<MatrixUnit> {
+struct fmt::formatter<hicxx::MatrixUnit> {
     static constexpr auto parse(format_parse_context &ctx) -> decltype(ctx.begin()) {
         if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
             throw fmt::format_error("invalid format");
@@ -216,11 +233,11 @@ struct fmt::formatter<MatrixUnit> {
     }
 
     template <class FormatContext>
-    static auto format(const MatrixUnit u, FormatContext &ctx) -> decltype(ctx.out()) {
+    static auto format(const hicxx::MatrixUnit u, FormatContext &ctx) -> decltype(ctx.out()) {
         switch (u) {
-            case MatrixUnit::BP:
+            case hicxx::MatrixUnit::BP:
                 return fmt::format_to(ctx.out(), FMT_STRING("BP"));
-            case MatrixUnit::FRAG:
+            case hicxx::MatrixUnit::FRAG:
                 return fmt::format_to(ctx.out(), FMT_STRING("FRAG"));
         }
         assert(false);
@@ -285,13 +302,3 @@ struct GenomicCoordinates {
         return gc;
     }
 };
-
-// to avoid useless casts (see https://github.com/nlohmann/json/issues/2893#issuecomment-889152324)
-template <class T, class U>
-[[maybe_unused]] [[nodiscard]] constexpr T conditional_static_cast(U value) {
-    if constexpr (std::is_same_v<T, U>) {
-        return value;
-    } else {
-        return static_cast<T>(value);
-    }
-}

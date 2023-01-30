@@ -12,6 +12,8 @@
 
 #include "straw/straw.hpp"
 
+using namespace hicxx;
+
 static std::int32_t getChromSize(const HiCFile& hic, const std::string& chrom_name) {
     auto it = hic.chromosomes().find(chrom_name);
     if (it == hic.chromosomes().end()) {

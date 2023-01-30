@@ -10,7 +10,7 @@
 
 #include "straw/internal/common.hpp"
 
-namespace internal {
+namespace hicxx::internal {
 struct HiCFooterMetadata {
     std::string url{};
     MatrixType matrixType{MatrixType::observed};
@@ -60,6 +60,6 @@ class HiCFooter {
     [[nodiscard]] constexpr std::vector<double> &c1Norm() noexcept;
     [[nodiscard]] constexpr std::vector<double> &c2Norm() noexcept;
 };
-}  // namespace internal
+}  // namespace hicxx::internal
 
 #include "../../../hic_footer_impl.hpp"

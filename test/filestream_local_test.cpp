@@ -14,7 +14,7 @@
 #include "straw/internal/filestream.hpp"
 #include "straw/internal/suppress_compiler_warnings.hpp"
 
-using namespace internal::filestream;
+using namespace hicxx::internal::filestream;
 
 static FileStream open_local_file(const std::string& s) {
 #ifdef STRAW_USE_CURL

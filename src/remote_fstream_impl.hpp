@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-namespace internal::filestream::internal {
+namespace hicxx::internal::filestream::internal {
 
 inline RemoteFileStream::RemoteFileStream(std::string url, std::size_t chunk_size,
                                           std::string agent)
@@ -318,4 +318,4 @@ inline void RemoteFileStream::mark_eof() noexcept {
     this->chunk_offset_ = 0;
     this->stream_pos_ = this->eof_pos();
 }
-}  // namespace internal::filestream::internal
+}  // namespace hicxx::internal::filestream::internal

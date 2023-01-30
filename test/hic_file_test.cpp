@@ -8,10 +8,11 @@
 
 #include "straw/straw.hpp"
 
+using namespace hicxx;
+
 constexpr auto* pathV8 = "test/data/4DNFIZ1ZVXC8.hic8";
-#ifdef STRAW_USE_CURL
-constexpr auto* urlV8 = "https://www.dropbox.com/s/zt62d0d3fhbkha0/4DNFIZ1ZVXC8.hic8?dl=1";
-#endif
+[[maybe_unused]] constexpr auto* urlV8 =
+    "https://www.dropbox.com/s/zt62d0d3fhbkha0/4DNFIZ1ZVXC8.hic8?dl=1";
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("HiCFile accessors") {

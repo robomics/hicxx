@@ -10,7 +10,7 @@
 
 #include "straw/internal/common.hpp"
 
-namespace internal {
+namespace hicxx::internal {
 
 constexpr HiCFooterMetadata::operator bool() const noexcept { return fileOffset >= 0; }
 
@@ -73,12 +73,12 @@ constexpr std::vector<double> &HiCFooter::c2Norm() noexcept {
     return _c2Norm;
 }
 
-}  // namespace internal
+}  // namespace hicxx::internal
 
 template <>
-struct std::hash<internal::HiCFooterMetadata> {
-    inline std::size_t operator()(internal::HiCFooterMetadata const &m) const noexcept {
-        return internal::hash_combine(0, m.url, m.matrixType, m.normalization, m.unit, m.resolution,
-                                      m.chrom1, m.chrom2);
+struct std::hash<hicxx::internal::HiCFooterMetadata> {
+    inline std::size_t operator()(hicxx::internal::HiCFooterMetadata const &m) const noexcept {
+        return hicxx::internal::hash_combine(0, m.url, m.matrixType, m.normalization, m.unit,
+                                             m.resolution, m.chrom1, m.chrom2);
     }
 };

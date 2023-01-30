@@ -14,7 +14,7 @@
 #include "straw/internal/filestream.hpp"
 #include "straw/internal/suppress_compiler_warnings.hpp"
 
-using namespace internal::filestream;
+using namespace hicxx::internal::filestream;
 
 constexpr auto* url_plaintext = "https://www.rfc-editor.org/rfc/rfc9110.txt";
 constexpr auto* url_binary = "https://www.gutenberg.org/files/57037/57037-0.zip";

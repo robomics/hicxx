@@ -19,7 +19,7 @@
 
 #include "straw/internal/common.hpp"
 
-namespace internal {
+namespace hicxx::internal {
 
 template <typename T, typename std::enable_if<std::is_fundamental<T>::value>::type *>
 inline T MatrixZoomData::BinaryBuffer::read() {
@@ -512,4 +512,4 @@ inline void MatrixZoomData::readBlockNumbersV9Intra(std::int64_t bin1, std::int6
     }
 }
 
-}  // namespace internal
+}  // namespace hicxx::internal

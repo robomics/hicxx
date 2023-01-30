@@ -22,7 +22,7 @@
 #include "straw/internal/hic_footer.hpp"
 #include "straw/internal/hic_header.hpp"
 
-namespace internal {
+namespace hicxx::internal {
 
 struct BlockMap {
     std::map<std::size_t, indexEntry> blocks{};
@@ -93,6 +93,6 @@ class HiCFileStream {
 
     [[nodiscard]] static auto initZStream() -> ZStream;
 };
-}  // namespace internal
+}  // namespace hicxx::internal
 
 #include "../../../hic_file_stream_impl.hpp"

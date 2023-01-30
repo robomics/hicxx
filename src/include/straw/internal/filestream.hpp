@@ -18,7 +18,7 @@
 
 #include "straw/internal/common.hpp"
 
-namespace internal::filestream {
+namespace hicxx::internal::filestream {
 
 namespace internal {
 #ifdef STRAW_USE_CURL
@@ -189,7 +189,7 @@ class FileStream {
 };
 #endif
 
-}  // namespace internal::filestream
+}  // namespace hicxx::internal::filestream
 
 #include "../../../local_fstream_impl.hpp"
 #ifdef STRAW_USE_CURL

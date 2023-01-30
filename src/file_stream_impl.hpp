@@ -11,7 +11,7 @@
 #include <variant>
 #include <vector>
 
-namespace internal::filestream {
+namespace hicxx::internal::filestream {
 
 inline auto FileStream::forward_or_guess_stream_type(const std::string &url,
                                                      StreamType known_type) noexcept -> StreamType {
@@ -111,4 +111,4 @@ inline std::string FileStream::getline(char delim) {
     return std::visit([&](auto &fs) { return fs.getline(delim); }, this->stream_);
 }
 
-}  // namespace internal::filestream
+}  // namespace hicxx::internal::filestream

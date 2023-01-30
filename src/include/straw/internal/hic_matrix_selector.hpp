@@ -14,7 +14,7 @@
 #include "straw/internal/common.hpp"
 #include "straw/internal/hic_file_stream.hpp"
 
-namespace internal {
+namespace hicxx::internal {
 
 class MatrixZoomData {
     struct BinaryBuffer {
@@ -100,6 +100,6 @@ class MatrixZoomData {
                                              std::vector<contactRecord> &dest) noexcept;
 };
 
-}  // namespace internal
+}  // namespace hicxx::internal
 
 #include "../../../hic_matrix_selector_impl.hpp"

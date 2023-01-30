@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-namespace internal::filestream::internal {
+namespace hicxx::internal::filestream::internal {
 
 inline LocalFileStream::LocalFileStream(std::string path)
     : path_(std::move(path)),
@@ -129,4 +129,4 @@ inline std::ifstream LocalFileStream::open_file(const std::string &path,
     return ifs;
 }
 
-}  // namespace internal::filestream::internal
+}  // namespace hicxx::internal::filestream::internal
