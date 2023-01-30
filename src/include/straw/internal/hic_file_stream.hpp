@@ -11,7 +11,6 @@
 #endif
 
 #include <cstdint>
-#include <filestream/filestream.hpp>
 #include <map>
 #include <memory>
 #include <string>
@@ -19,6 +18,7 @@
 #include <vector>
 
 #include "straw/internal/common.hpp"
+#include "straw/internal/filestream.hpp"
 #include "straw/internal/hic_footer.hpp"
 #include "straw/internal/hic_header.hpp"
 

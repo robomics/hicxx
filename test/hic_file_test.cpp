@@ -9,7 +9,9 @@
 #include "straw/straw.hpp"
 
 constexpr auto* pathV8 = "test/data/4DNFIZ1ZVXC8.hic8";
+#ifdef STRAW_USE_CURL
 constexpr auto* urlV8 = "https://www.dropbox.com/s/zt62d0d3fhbkha0/4DNFIZ1ZVXC8.hic8?dl=1";
+#endif
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("HiCFile accessors") {
@@ -26,6 +28,7 @@ TEST_CASE("HiCFile accessors") {
         CHECK(f.resolutions().front() == 2500000);
         CHECK(f.resolutions().back() == 1000);
     }
+#ifdef STRAW_USE_CURL
     SECTION("remote") {
         HiCFile f(urlV8);
 
@@ -39,6 +42,7 @@ TEST_CASE("HiCFile accessors") {
         CHECK(f.resolutions().front() == 2500000);
         CHECK(f.resolutions().back() == 1000);
     }
+#endif
 
     SECTION("invalid") {
         CHECK_THROWS(HiCFile("non-existing-file"));
