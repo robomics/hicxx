@@ -10,7 +10,6 @@
 #include <cmath>
 #include <cstdint>
 #include <ios>
-#include <istream>
 #include <map>
 #include <set>
 #include <sstream>
@@ -60,11 +59,14 @@ inline const std::vector<double> &MatrixZoomData::chrom2Norm() const noexcept {
     return _footer->c2Norm();
 }
 
-inline double MatrixZoomData::avgCount() const noexcept {
-    if (isIntra()) {
-        return 0;
+inline double MatrixZoomData::avgCount() const {
+    if (isInter()) {
+        const auto numPixels =
+            static_cast<std::int64_t>(numBins1()) * static_cast<std::int64_t>(numBins2());
+        return _blockMap.sumCount / static_cast<double>(numPixels);
     }
-    return (_sumCount / numBins1()) / numBins2();  // <= trying to avoid overflows
+    throw std::domain_error(
+        "MatrixZoomData::avgCount is not implemented for intra-chromosomal matrices");
 }
 
 inline void MatrixZoomData::fetch(std::vector<contactRecord> &buffer) {
@@ -99,6 +101,18 @@ inline void MatrixZoomData::fetch(std::int64_t start1, std::int64_t end1, std::i
             fmt::format(FMT_STRING("start2 > end2: {} > {}"), start2, end2));
     }
 
+    if (start1 < 0 || end1 > chrom1().length) {
+        throw std::runtime_error(fmt::format(
+            FMT_STRING("query extends past chromosome {}: interval {}-{} lies outside of 0-{}"),
+            chrom1().name, start1, end1, chrom1().length));
+    }
+
+    if (start2 < 0 || end2 > chrom1().length) {
+        throw std::runtime_error(fmt::format(
+            FMT_STRING("query extends past chromosome {}: interval {}-{} lies outside of 0-{}"),
+            chrom2().name, start2, end2, chrom2().length));
+    }
+
     const auto bin1 = start1 / resolution();
     const auto bin2 = end1 / resolution();
     const auto bin3 = start2 / resolution();
@@ -118,17 +132,17 @@ inline void MatrixZoomData::fetch(std::int64_t start1, std::int64_t end1, std::i
             const auto pos1 = record.binX * resolution();
             const auto pos2 = record.binY * resolution();
 
-            if (pos1 < start1 || pos1 > end1 || pos2 < start2 || pos2 > end2) {
-                continue;
-            }
+            // Obs we use open-closed interval instead of open-open like is done in straw
+            const auto overlapsInter =
+                pos1 >= start1 && pos1 < end1 && pos2 >= start2 && pos2 < end2;
+            const auto overlapsIntra =
+                isIntra() && (pos2 >= start1 && pos2 < end1 && pos1 >= start2 && pos1 < end2);
 
-            if (isIntra() && (pos2 < start1 || pos2 > end1 || pos1 < start2 || pos1 > end2)) {
-                continue;
-            }
-
-            processInteraction(record, pos1, pos2);
-            if (!std::isnan(record.counts) && !std::isinf(record.counts)) {
-                buffer.emplace_back(std::move(record));
+            if (overlapsInter || overlapsIntra) {
+                processInteraction(record, pos1, pos2);
+                if (!std::isnan(record.counts) && !std::isinf(record.counts)) {
+                    buffer.emplace_back(std::move(record));
+                }
             }
         }
     }
@@ -180,7 +194,7 @@ inline void MatrixZoomData::fetch(std::int64_t start1, std::int64_t end1, std::i
 
     const auto rowOffset = start1 / resolution();
     const auto colOffset = start2 / resolution();
-    for (const auto& record: records) {
+    for (const auto &record : records) {
         const auto i = record.binY - rowOffset;
         const auto j = record.binX - colOffset;
         assert(i >= 0);
@@ -360,24 +374,27 @@ inline void MatrixZoomData::readBlockOfInteractionsType1(
 
     constexpr auto expectedOffsetV7 = (3 * sizeof(i32)) + (2 * sizeof(char));
     constexpr auto expectedOffsetV8plus = expectedOffsetV7 + (2 * sizeof(char));
+    (void)expectedOffsetV7;
+    (void)expectedOffsetV8plus;
     assert(src.i == expectedOffsetV7 || src.i == expectedOffsetV8plus);
 
-    std::size_t i = 0;
-    const auto rowCount = static_cast<i32>(src.read<Bin2Type>());
-    for (Bin2Type r = 0; r < rowCount; ++r) {
+    const auto expectedNumRecords = dest.size();
+    dest.clear();
+    const auto numRows = static_cast<i32>(src.read<Bin2Type>());
+    for (i32 i = 0; i < numRows; ++i) {
         const auto bin2 = bin2Offset + static_cast<i32>(src.read<Bin2Type>());
 
-        const auto colCount = static_cast<i32>(src.read<Bin1Type>());
-        for (Bin1Type c = 0; c < colCount; ++c) {
+        const auto numCols = static_cast<i32>(src.read<Bin1Type>());
+        for (i32 j = 0; j < numCols; ++j) {
             const auto bin1 = bin1Offset + static_cast<i32>(src.read<Bin1Type>());
 
             const auto counts = static_cast<f32>(src.read<CountType>());
-            assert(i < dest.size());
-            dest[i++] = contactRecord{bin1, bin2, counts};
+            dest.push_back(contactRecord{bin1, bin2, counts});
         }
     }
 
-    assert(dest.size() == i);
+    (void)expectedNumRecords;
+    assert(expectedNumRecords == dest.size());
 }
 
 template <typename CountType>

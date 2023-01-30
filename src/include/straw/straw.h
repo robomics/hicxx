@@ -127,7 +127,6 @@ struct BinaryBuffer {
 };
 
 class HiCFileStream {
-
 #ifdef STRAW_USE_ZLIBNG
     using ZStream = UniquePtrWithDeleter<zng_stream>;
 #else
@@ -193,7 +192,6 @@ class MatrixZoomData {
     std::shared_ptr<HiCFileStream> _fs;
     std::shared_ptr<const HiCFooter> _footer;
     BlockMap _blockMap{};
-    double _sumCount{};
     std::set<std::int32_t> _blockNumberBuff{};
     std::vector<contactRecord> _contactRecordBuff{};
     BinaryBuffer _buffer{};
@@ -219,7 +217,7 @@ class MatrixZoomData {
     const std::vector<double> &chrom1Norm() const noexcept;
     const std::vector<double> &chrom2Norm() const noexcept;
 
-    inline double avgCount() const noexcept;
+    inline double avgCount() const;
 
     void fetch(std::vector<contactRecord> &buffer);
     void fetch(const std::string &coord, std::vector<contactRecord> &buffer);
