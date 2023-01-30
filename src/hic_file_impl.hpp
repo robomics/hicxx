@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#include "straw/internal/common.h"
+#include "straw/internal/common.hpp"
 
 inline HiCFile::HiCFile(std::string url_)
     : _fs(std::make_shared<internal::HiCFileStream>(std::move(url_))) {}
@@ -131,54 +131,6 @@ inline internal::MatrixZoomData HiCFile::getMatrixZoomData(
 
     return internal::MatrixZoomData(
         _fs, getFooter(chromId1, chromId2, matrixType, norm, unit, resolution));
-}
-
-inline GenomicCoordinates GenomicCoordinates::fromString(std::string coord, bool noChromName) {
-    GenomicCoordinates gc{};
-
-    const auto original_coord = coord;
-
-    if (!noChromName) {
-        auto pos = coord.find(':');
-        if (pos == std::string::npos) {
-            gc.chrom = coord;
-            return gc;
-        }
-
-        gc.chrom = coord.substr(0, pos);
-        coord = coord.substr(pos + 1);
-    }
-
-    auto pos = coord.find('-');
-    if (pos == std::string::npos) {
-        pos = coord.find(':');
-    }
-    if (pos == std::string::npos) {
-        throw std::runtime_error(
-            fmt::format(FMT_STRING("unable to parse coordinate \"{}\""), coord));
-    }
-
-    try {
-        std::size_t tail{0};
-        gc.start = std::stoi(coord.substr(0, pos));
-        gc.end = std::stoi(coord.substr(pos + 1), &tail);
-        if (gc.start >= gc.end) {
-            throw std::runtime_error(fmt::format(
-                FMT_STRING("invalid coordinate {}: start position >= end position"), coord));
-        }
-        if (gc.start < 0) {
-            throw std::runtime_error(fmt::format(
-                FMT_STRING("invalid coordinate {}: start position is negative"), coord));
-        }
-        coord = coord.substr(pos + 1);
-        if (tail != coord.size()) {
-            throw std::runtime_error(fmt::format(FMT_STRING("unable to parse \"{}\""), coord));
-        }
-    } catch (const std::exception& e) {
-        throw std::runtime_error(fmt::format(FMT_STRING("unable to parse coordinate \"{}\": {}"),
-                                             original_coord, e.what()));
-    }
-    return gc;
 }
 
 inline std::size_t HiCFile::numCachedFooters() const noexcept { return _footers.size(); }

@@ -17,9 +17,20 @@
 #include <string>
 #include <vector>
 
-#include "straw/internal/common.h"
+#include "straw/internal/common.hpp"
 
 namespace internal {
+
+template <typename T, typename std::enable_if<std::is_fundamental<T>::value>::type *>
+inline T MatrixZoomData::BinaryBuffer::read() {
+    static_assert(sizeof(char) == 1, "");
+    assert(i < buffer.size());
+    T x{};
+
+    std::memcpy(static_cast<void *>(&x), buffer.data() + i, sizeof(T));
+    i += sizeof(T);
+    return x;
+}
 
 inline MatrixZoomData::MatrixZoomData(std::shared_ptr<HiCFileStream> fs,
                                       std::shared_ptr<const HiCFooter> footer)
@@ -129,8 +140,11 @@ inline void MatrixZoomData::fetch(std::int64_t start1, std::int64_t end1, std::i
         readBlockOfInteractions(_blockMap.blocks[blockNumber], _contactRecordBuff);
 
         for (auto &&record : _contactRecordBuff) {
-            const auto pos1 = record.binX * resolution();
-            const auto pos2 = record.binY * resolution();
+            record.bin1_start *= resolution();
+            record.bin2_start *= resolution();
+
+            const auto pos1 = record.bin1_start;
+            const auto pos2 = record.bin2_start;
 
             // Obs we use open-closed interval instead of open-open like is done in straw
             const auto overlapsInter =
@@ -139,8 +153,8 @@ inline void MatrixZoomData::fetch(std::int64_t start1, std::int64_t end1, std::i
                 isIntra() && (pos2 >= start1 && pos2 < end1 && pos1 >= start2 && pos1 < end2);
 
             if (overlapsInter || overlapsIntra) {
-                processInteraction(record, pos1, pos2);
-                if (!std::isnan(record.counts) && !std::isinf(record.counts)) {
+                processInteraction(record);
+                if (!std::isnan(record.count) && !std::isinf(record.count)) {
                     buffer.emplace_back(std::move(record));
                 }
             }
@@ -195,16 +209,15 @@ inline void MatrixZoomData::fetch(std::int64_t start1, std::int64_t end1, std::i
     const auto rowOffset = start1 / resolution();
     const auto colOffset = start2 / resolution();
     for (const auto &record : records) {
-        const auto i = record.binY - rowOffset;
-        const auto j = record.binX - colOffset;
+        const auto i = record.bin2_start - rowOffset;
+        const auto j = record.bin1_start - colOffset;
         assert(i >= 0);
         assert(j >= 0);
-        buffer[i][j] = record.counts;
+        buffer[i][j] = record.count;
     }
 }
 
-inline void MatrixZoomData::processInteraction(contactRecord &record, std::int32_t pos1,
-                                               std::int32_t pos2) {
+inline void MatrixZoomData::processInteraction(contactRecord &record) {
     const auto &c1Norm = _footer->c1Norm();
     const auto &c2Norm = _footer->c2Norm();
     const auto &expected = _footer->expectedValues();
@@ -213,7 +226,9 @@ inline void MatrixZoomData::processInteraction(contactRecord &record, std::int32
         normalizationMethod() == NormalizationMethod::NONE || matrixType() == MatrixType::expected;
 
     if (!skipNormalization) {
-        record.counts /= c1Norm[record.binX] * c2Norm[record.binY];
+        const auto bin1 = static_cast<std::size_t>(record.bin1_start / resolution());
+        const auto bin2 = static_cast<std::size_t>(record.bin2_start / resolution());
+        record.count /= c1Norm[bin1] * c2Norm[bin2];
     }
 
     if (matrixType() == MatrixType::observed) {
@@ -225,18 +240,19 @@ inline void MatrixZoomData::processInteraction(contactRecord &record, std::int32
             return avgCount();
         }
 
-        const auto i = std::abs(pos1 - pos2) / resolution();
+        const auto i = static_cast<std::size_t>(std::abs(record.bin1_start - record.bin2_start) /
+                                                resolution());
         assert(i < expected.size());
         return expected[i];
     }();
 
     if (matrixType() == MatrixType::expected) {
-        record.counts = expectedCount;
+        record.count = expectedCount;
         return;
     }
 
     assert(matrixType() == MatrixType::oe);
-    record.counts /= expectedCount;
+    record.count /= expectedCount;
 }
 
 inline void MatrixZoomData::readBlockOfInteractionsV6(BinaryBuffer &src,
@@ -324,10 +340,10 @@ inline void MatrixZoomData::readBlockOfInteractionsType1Dispatcher(
     bool i16Bin1, bool i16Bin2, bool i16Counts, std::int32_t bin1Offset, std::int32_t bin2Offset,
     BinaryBuffer &src, std::vector<contactRecord> &dest) noexcept {
     using BS = std::int16_t;  // Short type for bins
-    using CS = std::int16_t;  // Short type for counts
+    using CS = std::int16_t;  // Short type for count
 
     using BL = std::int32_t;  // Long type for bins
-    using CL = float;         // Long type for counts
+    using CL = float;         // Long type for count
 
     if (i16Bin1 && i16Bin2 && i16Counts) {
         readBlockOfInteractionsType1<BS, BS, CS>(bin1Offset, bin2Offset, src, dest);

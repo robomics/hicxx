@@ -1,26 +1,7 @@
-/*
-  The MIT License (MIT)
+// Copyright (C) 2023 Roberto Rossini <roberros@uio.no>
+//
+// SPDX-License-Identifier: MIT
 
-  Copyright (c) 2011-2016 Broad Institute, Aiden Lab
-
- Permission is hereby granted, free of charge, to any person obtaining a copy
- of this software and associated documentation files (the "Software"), to deal
- in the Software without restriction, including without limitation the rights
- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- copies of the Software, and to permit persons to whom the Software is
- furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in
- all copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- THE SOFTWARE.
-*/
 #include <fmt/compile.h>
 #include <fmt/format.h>
 
@@ -29,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "straw/straw.h"
+#include "straw/straw.hpp"
 
 static std::int32_t getChromSize(const HiCFile& hic, const std::string& chrom_name) {
     auto it = hic.chromosomes().find(chrom_name);
@@ -78,13 +59,11 @@ int main(int argc, char** argv) noexcept {
         selector.fetch(coord1.start, coord1.end, coord2.start, coord2.end, buffer);
 
         for (const auto& record : buffer) {
-            const auto start1 = record.binX * resolution;
-            const auto start2 = record.binY * resolution;
-            fmt::print(FMT_COMPILE("{}\t{}\t{}\n"), start1, start2, record.counts);
+            const auto start1 = record.bin1_start;
+            const auto start2 = record.bin2_start;
+            fmt::print(FMT_COMPILE("{}\t{}\t{}\n"), start1, start2, record.count);
         }
-    }
-
-    catch (const std::exception& e) {
+    } catch (const std::exception& e) {
         const auto* url = argc == 8 ? *(argv + 3) : *(argv + 2);
         fmt::print(
             stderr,

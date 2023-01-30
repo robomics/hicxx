@@ -10,7 +10,7 @@
 #include <numeric>
 #include <string>
 
-#include "straw/straw.h"
+#include "straw/straw.hpp"
 
 constexpr auto* pathV8 = "test/data/4DNFIZ1ZVXC8.hic8";
 constexpr auto* pathV9 = "test/data/4DNFIZ1ZVXC8.hic9";
@@ -37,7 +37,7 @@ template <typename N>
 static N sumCounts(const std::vector<contactRecord>& buffer) {
     return std::accumulate(buffer.begin(), buffer.end(), N(0),
                            [](N accumulator, const contactRecord& r) {
-                               return accumulator + static_cast<N>(r.counts);
+                               return accumulator + static_cast<N>(r.count);
                            });
 }
 
@@ -78,11 +78,11 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
             const auto t = tail(buffer, N);
 
             for (std::size_t i = 0; i < N; ++i) {
-                CHECK_THAT(head_expected[i], Catch::Matchers::WithinRel(h[i].counts));
-                CHECK_THAT(tail_expected[i], Catch::Matchers::WithinRel(t[i].counts));
+                CHECK_THAT(head_expected[i], Catch::Matchers::WithinRel(h[i].count));
+                CHECK_THAT(tail_expected[i], Catch::Matchers::WithinRel(t[i].count));
             }
 
-            CHECK_THAT(buffer[1227146].counts, Catch::Matchers::WithinRel(1234.0F));
+            CHECK_THAT(buffer[1227146].count, Catch::Matchers::WithinRel(1234.0F));
         }
         SECTION("inter-chromosomal") {
             HiCFile(pathV8)
@@ -100,11 +100,11 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
             const auto t = tail(buffer, N);
 
             for (std::size_t i = 0; i < N; ++i) {
-                CHECK_THAT(head_expected[i], Catch::Matchers::WithinRel(h[i].counts));
-                CHECK_THAT(tail_expected[i], Catch::Matchers::WithinRel(t[i].counts));
+                CHECK_THAT(head_expected[i], Catch::Matchers::WithinRel(h[i].count));
+                CHECK_THAT(tail_expected[i], Catch::Matchers::WithinRel(t[i].count));
             }
 
-            CHECK_THAT(buffer[20324].counts, Catch::Matchers::WithinRel(12.0F));
+            CHECK_THAT(buffer[20324].count, Catch::Matchers::WithinRel(12.0F));
         }
     }
     SECTION("v9") {
@@ -124,11 +124,11 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
             const auto t = tail(buffer, N);
 
             for (std::size_t i = 0; i < N; ++i) {
-                CHECK_THAT(head_expected[i], Catch::Matchers::WithinRel(h[i].counts));
-                CHECK_THAT(tail_expected[i], Catch::Matchers::WithinRel(t[i].counts));
+                CHECK_THAT(head_expected[i], Catch::Matchers::WithinRel(h[i].count));
+                CHECK_THAT(tail_expected[i], Catch::Matchers::WithinRel(t[i].count));
             }
 
-            CHECK_THAT(buffer[870834].counts, Catch::Matchers::WithinRel(1234.0F));
+            CHECK_THAT(buffer[870834].count, Catch::Matchers::WithinRel(1234.0F));
         }
         SECTION("inter-chromosomal") {
             HiCFile(pathV9)
@@ -146,11 +146,11 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
             const auto t = tail(buffer, N);
 
             for (std::size_t i = 0; i < N; ++i) {
-                CHECK_THAT(head_expected[i], Catch::Matchers::WithinRel(h[i].counts));
-                CHECK_THAT(tail_expected[i], Catch::Matchers::WithinRel(t[i].counts));
+                CHECK_THAT(head_expected[i], Catch::Matchers::WithinRel(h[i].count));
+                CHECK_THAT(tail_expected[i], Catch::Matchers::WithinRel(t[i].count));
             }
 
-            CHECK_THAT(buffer[20295].counts, Catch::Matchers::WithinRel(12.0F));
+            CHECK_THAT(buffer[20295].count, Catch::Matchers::WithinRel(12.0F));
         }
 
         SECTION("inter-chromosomal") {
@@ -169,11 +169,11 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
             const auto t = tail(buffer, N);
 
             for (std::size_t i = 0; i < N; ++i) {
-                CHECK_THAT(head_expected[i], Catch::Matchers::WithinRel(h[i].counts));
-                CHECK_THAT(tail_expected[i], Catch::Matchers::WithinRel(t[i].counts));
+                CHECK_THAT(head_expected[i], Catch::Matchers::WithinRel(h[i].count));
+                CHECK_THAT(tail_expected[i], Catch::Matchers::WithinRel(t[i].count));
             }
 
-            CHECK_THAT(buffer[20295].counts, Catch::Matchers::WithinRel(12.0F));
+            CHECK_THAT(buffer[20295].count, Catch::Matchers::WithinRel(12.0F));
         }
     }
 
@@ -184,7 +184,7 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
                                    MatrixUnit::BP, 10000)
                 .fetch("100000-100001", "100000-100001", buffer);
             REQUIRE(buffer.size() == 1);
-            CHECK(buffer.front().counts == 13895);
+            CHECK(buffer.front().count == 13895);
         }
 
         SECTION("upper-triangle") {

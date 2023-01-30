@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <string>
 
-#include "straw/straw.h"
+#include "straw/straw.hpp"
 
 constexpr auto* pathV8 = "test/data/4DNFIZ1ZVXC8.hic8";
 constexpr auto* urlV8 = "https://www.dropbox.com/s/zt62d0d3fhbkha0/4DNFIZ1ZVXC8.hic8?dl=1";

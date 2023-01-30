@@ -22,13 +22,34 @@ struct indexEntry {
     std::int64_t size{-1};
 
     constexpr explicit operator bool() const noexcept { return size >= 0 && position >= 0; }
+    constexpr bool operator<(const indexEntry &other) const noexcept {
+        return position < other.position;
+    }
+    constexpr bool operator==(const indexEntry &other) const noexcept {
+        return position == other.position && size == other.size;
+    }
+    constexpr bool operator!=(const indexEntry &other) const noexcept { return !(*this == other); }
 };
 
 // sparse matrixType entry
 struct contactRecord {
-    std::int32_t binX{};
-    std::int32_t binY{};
-    float counts{};
+    std::int32_t bin1_start{};
+    std::int32_t bin2_start{};
+    float count{};
+
+    constexpr bool operator<(const contactRecord &other) const noexcept {
+        if (bin1_start == other.bin1_start) {
+            return bin2_start < other.bin2_start;
+        }
+        return bin1_start < other.bin1_start;
+    }
+    constexpr bool operator==(const contactRecord &other) const noexcept {
+        return bin1_start == other.bin1_start && bin2_start == other.bin2_start &&
+               count == other.count;
+    }
+    constexpr bool operator!=(const contactRecord &other) const noexcept {
+        return !(*this == other);
+    }
 };
 
 // chromosome
@@ -133,14 +154,6 @@ inline bool StartsWith(const std::string &s, const std::string &prefix) {
 
 }  // namespace internal
 
-inline void convertGenomeToBinPos(const std::int64_t origRegionIndices[4],
-                                  std::int64_t regionIndices[4], std::int32_t resolution) {
-    for (std::uint16_t q = 0; q < 4; q++) {
-        // used to find the blocks we need to access
-        regionIndices[q] = origRegionIndices[q] / resolution;
-    }
-}
-
 template <>
 struct fmt::formatter<NormalizationMethod> {
     static constexpr auto parse(format_parse_context &ctx) -> decltype(ctx.begin()) {
@@ -217,3 +230,57 @@ struct fmt::formatter<MatrixUnit> {
 
 template <typename T>
 using UniquePtrWithDeleter = std::unique_ptr<T, std::function<void(T *)>>;
+
+struct GenomicCoordinates {
+    std::string chrom;
+    std::int32_t start;
+    std::int32_t end;
+
+    inline static GenomicCoordinates fromString(std::string coord, bool noChromName = false) {
+        GenomicCoordinates gc{};
+
+        const auto original_coord = coord;
+
+        if (!noChromName) {
+            auto pos = coord.find(':');
+            if (pos == std::string::npos) {
+                gc.chrom = coord;
+                return gc;
+            }
+
+            gc.chrom = coord.substr(0, pos);
+            coord = coord.substr(pos + 1);
+        }
+
+        auto pos = coord.find('-');
+        if (pos == std::string::npos) {
+            pos = coord.find(':');
+        }
+        if (pos == std::string::npos) {
+            throw std::runtime_error(
+                fmt::format(FMT_STRING("unable to parse coordinate \"{}\""), coord));
+        }
+
+        try {
+            std::size_t tail{0};
+            gc.start = std::stoi(coord.substr(0, pos));
+            gc.end = std::stoi(coord.substr(pos + 1), &tail);
+            if (gc.start >= gc.end) {
+                throw std::runtime_error(fmt::format(
+                    FMT_STRING("invalid coordinate {}: start position >= end position"), coord));
+            }
+            if (gc.start < 0) {
+                throw std::runtime_error(fmt::format(
+                    FMT_STRING("invalid coordinate {}: start position is negative"), coord));
+            }
+            coord = coord.substr(pos + 1);
+            if (tail != coord.size()) {
+                throw std::runtime_error(fmt::format(FMT_STRING("unable to parse \"{}\""), coord));
+            }
+        } catch (const std::exception &e) {
+            throw std::runtime_error(fmt::format(
+                FMT_STRING("unable to parse coordinate \"{}\": {}"), original_coord, e.what()));
+        }
+        return gc;
+    }
+};

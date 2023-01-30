@@ -35,9 +35,15 @@ target_sources(
     straw
     INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/hic_file_impl.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/hic_file_stream_impl.hpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/matrix_zoom_data_impl.hpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/include/straw/straw.h
-              ${CMAKE_CURRENT_SOURCE_DIR}/include/straw/internal/common.h)
+              ${CMAKE_CURRENT_SOURCE_DIR}/hic_footer_impl.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/hic_header_impl.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/hic_matrix_selector_impl.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/include/straw/straw.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/include/straw/internal/common.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/include/straw/internal/hic_footer.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/include/straw/internal/hic_matrix_selector.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/include/straw/internal/hic_file_stream.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/include/straw/internal/hic_header.hpp)
 
 target_include_directories(straw INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(
