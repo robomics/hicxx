@@ -8,13 +8,13 @@ include(FetchContent)
 
 FetchContent_Declare(
     fmt
-    URL https://github.com/fmtlib/fmt/archive/refs/tags/9.1.0.tar.gz
-    URL_HASH SHA256=5dea48d1fcddc3ec571ce2058e13910a0d4a6bab4cc09a809d8b1dd1c88ae6f2)
+    GIT_REPOSITORY https://github.com/fmtlib/fmt
+    GIT_TAG 9.1.0)
 
 FetchContent_Declare(
     zlib-ng
-    URL https://github.com/zlib-ng/zlib-ng/archive/refs/tags/2.0.6.tar.gz
-    URL_HASH SHA256=8258b75a72303b661a238047cb348203d88d9dddf85d480ed885f375916fcab6)
+    GIT_REPOSITORY https://github.com/zlib-ng/zlib-ng
+    GIT_TAG 2.0.6)
 
 if(HICXX_USE_CURL)
     find_package(CURL REQUIRED)
