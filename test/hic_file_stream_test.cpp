@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#include "straw/internal/hic_file_stream.hpp"
+#include "hicxx/internal/hic_file_stream.hpp"
 
 #include <array>
 #include <catch2/catch_test_macros.hpp>

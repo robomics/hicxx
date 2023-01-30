@@ -8,7 +8,7 @@
 #include <string>
 #include <utility>
 
-#include "straw/internal/common.hpp"
+#include "hicxx/internal/common.hpp"
 
 namespace hicxx::internal {
 

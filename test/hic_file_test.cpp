@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <string>
 
-#include "straw/straw.hpp"
+#include "hicxx/hicxx.hpp"
 
 using namespace hicxx;
 
@@ -29,7 +29,7 @@ TEST_CASE("HiCFile accessors") {
         CHECK(f.resolutions().front() == 2500000);
         CHECK(f.resolutions().back() == 1000);
     }
-#ifdef STRAW_USE_CURL
+#ifdef HICXX_USE_CURL
     SECTION("remote") {
         HiCFile f(urlV8);
 

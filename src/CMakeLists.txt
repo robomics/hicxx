@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-add_library(straw INTERFACE)
+add_library(hicxx INTERFACE)
 
 include(FetchContent)
 
@@ -16,11 +16,11 @@ FetchContent_Declare(
     URL https://github.com/zlib-ng/zlib-ng/archive/refs/tags/2.0.6.tar.gz
     URL_HASH SHA256=8258b75a72303b661a238047cb348203d88d9dddf85d480ed885f375916fcab6)
 
-if(STRAW_USE_CURL)
+if(HICXX_USE_CURL)
     find_package(CURL REQUIRED)
 endif()
 
-if(STRAW_USE_ZLIBNG)
+if(HICXX_USE_ZLIBNG)
     set(ZLIB_ENABLE_TESTS OFF)
     set(WITH_GTEST OFF)
     FetchContent_MakeAvailable(fmt zlib-ng)
@@ -30,27 +30,27 @@ else()
 endif()
 
 target_sources(
-    straw
+    hicxx
     INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/hic_file_impl.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/hic_file_stream_impl.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/hic_footer_impl.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/hic_header_impl.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/hic_matrix_selector_impl.hpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/include/straw/straw.hpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/include/straw/internal/common.hpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/include/straw/internal/hic_footer.hpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/include/straw/internal/hic_matrix_selector.hpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/include/straw/internal/hic_file_stream.hpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/include/straw/internal/hic_header.hpp)
+              ${CMAKE_CURRENT_SOURCE_DIR}/include/hicxx/hicxx.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/include/hicxx/internal/common.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/include/hicxx/internal/hic_footer.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/include/hicxx/internal/hic_matrix_selector.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/include/hicxx/internal/hic_file_stream.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/include/hicxx/internal/hic_header.hpp)
 
-target_include_directories(straw INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(hicxx INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(
-    straw
-    INTERFACE straw_project_options
-              straw_project_warnings
+    hicxx
+    INTERFACE hicxx_project_options
+              hicxx_project_warnings
               fmt::fmt-header-only
-              $<$<BOOL:${STRAW_USE_CURL}>:CURL::libcurl>
-              $<IF:$<BOOL:${STRAW_USE_ZLIBNG}>,zlib,ZLIB::ZLIB>)
+              $<$<BOOL:${HICXX_USE_CURL}>:CURL::libcurl>
+              $<IF:$<BOOL:${HICXX_USE_ZLIBNG}>,zlib,ZLIB::ZLIB>)
 
-target_compile_definitions(straw INTERFACE FMT_ENFORCE_COMPILE_STRING $<$<BOOL:${STRAW_USE_CURL}>:STRAW_USE_CURL>
-                                           $<$<BOOL:${STRAW_USE_ZLIBNG}>:STRAW_USE_ZLIBNG>)
+target_compile_definitions(hicxx INTERFACE FMT_ENFORCE_COMPILE_STRING $<$<BOOL:${HICXX_USE_CURL}>:HICXX_USE_CURL>
+                                           $<$<BOOL:${HICXX_USE_ZLIBNG}>:HICXX_USE_ZLIBNG>)

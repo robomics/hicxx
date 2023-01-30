@@ -14,10 +14,10 @@ FetchContent_MakeAvailable(Catch2)
 include(CTest)
 include(Catch)
 
-add_executable(straw_test_main)
+add_executable(hicxx_test_main)
 
 target_sources(
-    straw_test_main
+    hicxx_test_main
     PRIVATE filestream_local_test.cpp
             filestream_remote_test.cpp
             hic_file_test.cpp
@@ -25,10 +25,10 @@ target_sources(
             matrix_zoom_data_test.cpp)
 
 target_link_libraries(
-    straw_test_main
-    PRIVATE straw_project_options
-            straw_project_warnings
-            straw
+    hicxx_test_main
+    PRIVATE hicxx_project_options
+            hicxx_project_warnings
+            hicxx
             Catch2::Catch2WithMain)
 
-catch_discover_tests(straw_test_main WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../)
+catch_discover_tests(hicxx_test_main WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../)

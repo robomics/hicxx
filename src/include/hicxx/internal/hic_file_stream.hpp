@@ -4,7 +4,7 @@
 
 #pragma once
 
-#ifdef STRAW_USE_ZLIBNG
+#ifdef HICXX_USE_ZLIBNG
 #include <zlib-ng.h>
 #else
 #include <zlib.h>
@@ -17,10 +17,10 @@
 #include <utility>
 #include <vector>
 
-#include "straw/internal/common.hpp"
-#include "straw/internal/filestream.hpp"
-#include "straw/internal/hic_footer.hpp"
-#include "straw/internal/hic_header.hpp"
+#include "hicxx/internal/common.hpp"
+#include "hicxx/internal/filestream.hpp"
+#include "hicxx/internal/hic_footer.hpp"
+#include "hicxx/internal/hic_header.hpp"
 
 namespace hicxx::internal {
 
@@ -32,7 +32,7 @@ struct BlockMap {
 };
 
 class HiCFileStream {
-#ifdef STRAW_USE_ZLIBNG
+#ifdef HICXX_USE_ZLIBNG
     using ZStream = UniquePtrWithDeleter<zng_stream>;
 #else
     using ZStream = UniquePtrWithDeleter<z_stream>;

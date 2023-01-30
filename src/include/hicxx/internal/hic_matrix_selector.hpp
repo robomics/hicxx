@@ -11,8 +11,8 @@
 #include <type_traits>
 #include <vector>
 
-#include "straw/internal/common.hpp"
-#include "straw/internal/hic_file_stream.hpp"
+#include "hicxx/internal/common.hpp"
+#include "hicxx/internal/hic_file_stream.hpp"
 
 namespace hicxx::internal {
 

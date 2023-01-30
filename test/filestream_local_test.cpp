@@ -11,13 +11,13 @@
 #include <vector>
 
 #include "catch2/catch_test_macros.hpp"
-#include "straw/internal/filestream.hpp"
-#include "straw/internal/suppress_compiler_warnings.hpp"
+#include "hicxx/internal/filestream.hpp"
+#include "hicxx/internal/suppress_compiler_warnings.hpp"
 
 using namespace hicxx::internal::filestream;
 
 static FileStream open_local_file(const std::string& s) {
-#ifdef STRAW_USE_CURL
+#ifdef HICXX_USE_CURL
     return FileStream::Local(s);
 #else
     return FileStream(s);

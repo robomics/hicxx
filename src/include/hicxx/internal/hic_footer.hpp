@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "straw/internal/common.hpp"
+#include "hicxx/internal/common.hpp"
 
 namespace hicxx::internal {
 struct HiCFooterMetadata {

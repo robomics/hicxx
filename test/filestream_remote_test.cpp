@@ -1,7 +1,7 @@
 // Copyright (C) 2023 Roberto Rossini <roberros@uio.no>
 //
 // SPDX-License-Identifier: MIT
-#ifdef STRAW_USE_CURL
+#ifdef HICXX_USE_CURL
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -11,8 +11,8 @@
 #include <vector>
 
 #include "catch2/catch_test_macros.hpp"
-#include "straw/internal/filestream.hpp"
-#include "straw/internal/suppress_compiler_warnings.hpp"
+#include "hicxx/internal/filestream.hpp"
+#include "hicxx/internal/suppress_compiler_warnings.hpp"
 
 using namespace hicxx::internal::filestream;
 

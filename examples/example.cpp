@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "straw/straw.hpp"
+#include "hicxx/hicxx.hpp"
 
 using namespace hicxx;
 
@@ -29,7 +29,7 @@ int main(int argc, char** argv) noexcept {
             fmt::print(
                 stderr,
                 FMT_STRING("Incorrect arguments\n"
-                           "Usage: straw [observed/oe/expected] <NONE/VC/VC_SQRT/KR> <hicFile(s)> "
+                           "Usage: hicxx [observed/oe/expected] <NONE/VC/VC_SQRT/KR> <hicFile(s)> "
                            "<chr1>[:x1:x2] <chr2>[:y1:y2] <BP/FRAG> <binsize>\n"));
             return 1;
         }
@@ -69,11 +69,11 @@ int main(int argc, char** argv) noexcept {
         const auto* url = argc == 8 ? *(argv + 3) : *(argv + 2);
         fmt::print(
             stderr,
-            FMT_STRING("straw encountered the following error while processing file \"{}\": {}\n"),
+            FMT_STRING("hicxx encountered the following error while processing file \"{}\": {}\n"),
             url, e.what());
         return 1;
     } catch (...) {
-        fmt::print(stderr, FMT_STRING("straw encountered an unknown error!\n"));
+        fmt::print(stderr, FMT_STRING("hicxx encountered an unknown error!\n"));
         return 1;
     }
 }

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#ifdef STRAW_USE_CURL
+#ifdef HICXX_USE_CURL
 #include <curl/curl.h>
 #endif
 
@@ -16,12 +16,12 @@
 #include <variant>
 #include <vector>
 
-#include "straw/internal/common.hpp"
+#include "hicxx/internal/common.hpp"
 
 namespace hicxx::internal::filestream {
 
 namespace internal {
-#ifdef STRAW_USE_CURL
+#ifdef HICXX_USE_CURL
 class RemoteFileStream {
    public:
     using CURL_ptr = UniquePtrWithDeleter<CURL>;
@@ -37,7 +37,7 @@ class RemoteFileStream {
    public:
     RemoteFileStream() = default;
     explicit RemoteFileStream(std::string url, std::size_t chunk_size = 64 * 1024,
-                              std::string agent = "straw");
+                              std::string agent = "hicxx");
 
     [[nodiscard]] const std::string &url() const noexcept;
     [[nodiscard]] std::size_t size() const noexcept;
@@ -135,7 +135,7 @@ class LocalFileStream {
 };
 }  // namespace internal
 
-#ifndef STRAW_USE_CURL
+#ifndef HICXX_USE_CURL
 using FileStream = internal::LocalFileStream;
 #else
 
@@ -151,7 +151,7 @@ class FileStream {
                         std::size_t chunk_size = 64 * 1024, std::string agent = "filestream");
     static FileStream Local(std::string path);
     static FileStream Remote(std::string path, std::size_t chunk_size = 64 * 1024,
-                             std::string agent = "straw");
+                             std::string agent = "hicxx");
 
     bool is_local() const noexcept;
     bool is_remote() const noexcept;
@@ -192,7 +192,7 @@ class FileStream {
 }  // namespace hicxx::internal::filestream
 
 #include "../../../local_fstream_impl.hpp"
-#ifdef STRAW_USE_CURL
+#ifdef HICXX_USE_CURL
 #include "../../../file_stream_impl.hpp"
 #include "../../../remote_fstream_impl.hpp"
 #endif

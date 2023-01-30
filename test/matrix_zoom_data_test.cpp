@@ -10,7 +10,7 @@
 #include <numeric>
 #include <string>
 
-#include "straw/straw.hpp"
+#include "hicxx/hicxx.hpp"
 
 using namespace hicxx;
 

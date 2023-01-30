@@ -12,12 +12,12 @@
 #include <utility>
 #include <vector>
 
-#include "straw/internal/common.hpp"
-#include "straw/internal/filestream.hpp"
-#include "straw/internal/hic_file_stream.hpp"
-#include "straw/internal/hic_footer.hpp"
-#include "straw/internal/hic_header.hpp"
-#include "straw/internal/hic_matrix_selector.hpp"
+#include "hicxx/internal/common.hpp"
+#include "hicxx/internal/filestream.hpp"
+#include "hicxx/internal/hic_file_stream.hpp"
+#include "hicxx/internal/hic_footer.hpp"
+#include "hicxx/internal/hic_header.hpp"
+#include "hicxx/internal/hic_matrix_selector.hpp"
 
 namespace hicxx {
 class HiCFile {

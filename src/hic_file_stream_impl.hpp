@@ -4,7 +4,7 @@
 
 #pragma once
 
-#ifdef STRAW_USE_ZLIBNG
+#ifdef HICXX_USE_ZLIBNG
 #include <zlib-ng.h>
 #else
 #include <zlib.h>
@@ -21,8 +21,8 @@
 #include <string>
 #include <utility>
 
-#include "straw/internal/common.hpp"
-#include "straw/internal/filestream.hpp"
+#include "hicxx/internal/common.hpp"
+#include "hicxx/internal/filestream.hpp"
 
 namespace hicxx::internal {
 
@@ -31,13 +31,13 @@ inline HiCFileStream::HiCFileStream(std::string url)
       _header(std::make_shared<const HiCHeader>(HiCFileStream::readHeader(*_fs))) {}
 
 inline filestream::FileStream HiCFileStream::openStream(std::string url) {
-#ifdef STRAW_USE_CURL
+#ifdef HICXX_USE_CURL
     const auto isRemoteFile = StartsWith(url, "http");
     try {
         try {
             if (isRemoteFile) {
                 constexpr std::size_t defaulChunkSize = 64 * 1024;
-                return filestream::FileStream::Remote(url, defaulChunkSize, "straw");
+                return filestream::FileStream::Remote(url, defaulChunkSize, "hicxx");
             }
             return filestream::FileStream::Local(url);
 
@@ -63,7 +63,7 @@ inline const HiCHeader &HiCFileStream::header() const noexcept { return *_header
 inline bool HiCFileStream::isLocal() const noexcept { return !isRemote(); }
 
 inline bool HiCFileStream::isRemote() const noexcept {
-#ifdef STRAW_USE_CURL
+#ifdef HICXX_USE_CURL
     return _fs->is_remote();
 #else
     return false;
@@ -191,8 +191,8 @@ inline std::int64_t HiCFileStream::masterOffset() const noexcept {
     return _header->masterIndexOffset;
 }
 
-inline const char *strawZError(int status) {
-#ifdef STRAW_USE_ZLIBNG
+inline const char *hicxxZError(int status) {
+#ifdef HICXX_USE_ZLIBNG
     return zng_zError(status);
 #else
     return zError(status);
@@ -200,7 +200,7 @@ inline const char *strawZError(int status) {
 }
 
 inline auto HiCFileStream::initZStream() -> ZStream {
-#ifdef STRAW_USE_ZLIBNG
+#ifdef HICXX_USE_ZLIBNG
     ZStream zs(new zng_stream, [&](auto *ptr) {
         zng_inflateEnd(ptr);
         delete ptr;
@@ -218,14 +218,14 @@ inline auto HiCFileStream::initZStream() -> ZStream {
     zs->avail_in = 0;
     zs->next_in = Z_NULL;
 
-#ifdef STRAW_USE_ZLIBNG
+#ifdef HICXX_USE_ZLIBNG
     const auto status = zng_inflateInit(zs.get());
 #else
     const auto status = inflateInit(zs.get());
 #endif
     if (status != Z_OK) {
         throw std::runtime_error(fmt::format(
-            FMT_STRING("failed to initialize zlib decompression stream: {}"), strawZError(status)));
+            FMT_STRING("failed to initialize zlib decompression stream: {}"), hicxxZError(status)));
     }
 
     return zs;
@@ -374,14 +374,14 @@ inline void HiCFileStream::readAndInflate(indexEntry idx, std::string &plainText
         _zlibstream->avail_in = static_cast<uInt>(_strbuff.size());
         _zlibstream->next_in = reinterpret_cast<Bytef *>(&*(_strbuff.begin()));
 
-#ifdef STRAW_USE_ZLIBNG
+#ifdef HICXX_USE_ZLIBNG
         auto status = zng_inflateReset(_zlibstream.get());
 #else
         auto status = inflateReset(_zlibstream.get());
 #endif
         if (status != Z_OK) {
             plainTextBuffer.clear();
-            throw std::runtime_error(strawZError(status));
+            throw std::runtime_error(hicxxZError(status));
         }
 
         plainTextBuffer.reserve(buffSize * 3);
@@ -393,7 +393,7 @@ inline void HiCFileStream::readAndInflate(indexEntry idx, std::string &plainText
             _zlibstream->next_out =
                 reinterpret_cast<Bytef *>(&*(plainTextBuffer.begin() + std::int64_t(current_size)));
 
-#ifdef STRAW_USE_ZLIBNG
+#ifdef HICXX_USE_ZLIBNG
             status = zng_inflate(_zlibstream.get(), Z_NO_FLUSH);
 #else
             status = inflate(_zlibstream.get(), Z_NO_FLUSH);
@@ -404,7 +404,7 @@ inline void HiCFileStream::readAndInflate(indexEntry idx, std::string &plainText
             }
             if (status != Z_OK) {
                 plainTextBuffer.clear();
-                throw std::runtime_error(strawZError(status));
+                throw std::runtime_error(hicxxZError(status));
             }
 
             current_size = plainTextBuffer.size();

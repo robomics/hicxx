@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-#include "straw/internal/common.hpp"
+#include "hicxx/internal/common.hpp"
 
 namespace hicxx::internal {
 
@@ -144,7 +144,7 @@ inline void MatrixZoomData::fetch(std::int64_t start1, std::int64_t end1, std::i
             const auto pos1 = record.bin1_start;
             const auto pos2 = record.bin2_start;
 
-            // Obs we use open-closed interval instead of open-open like is done in straw
+            // Obs we use open-closed interval instead of open-open like is done in hicxx
             const auto overlapsInter =
                 pos1 >= start1 && pos1 < end1 && pos2 >= start2 && pos2 < end2;
             const auto overlapsIntra =
