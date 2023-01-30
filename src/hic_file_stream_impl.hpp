@@ -231,15 +231,17 @@ inline auto HiCFileStream::initZStream() -> ZStream {
     return zs;
 }
 
-inline void HiCFileStream::readBlockMap(std::int64_t fileOffset, const chromosome &chrom1,
-                                        const chromosome &chrom2, MatrixUnit wantedUnit,
-                                        std::int64_t wantedResolution, BlockMap &buffer) {
+inline void HiCFileStream::readBlockMap(std::int64_t fileOffset,
+                                        [[maybe_unused]] const chromosome &chrom1,
+                                        [[maybe_unused]] const chromosome &chrom2,
+                                        MatrixUnit wantedUnit, std::int64_t wantedResolution,
+                                        BlockMap &buffer) {
     _fs->seekg(fileOffset);
     auto &blockMap = buffer.blocks;
     blockMap.clear();
 
-    const auto c1i = _fs->read<std::int32_t>();
-    const auto c2i = _fs->read<std::int32_t>();
+    [[maybe_unused]] const auto c1i = _fs->read<std::int32_t>();
+    [[maybe_unused]] const auto c2i = _fs->read<std::int32_t>();
     const auto numResolutions = _fs->read<std::int32_t>();
 
     assert(c1i == chrom1.index);
