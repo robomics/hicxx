@@ -2,34 +2,54 @@
 //
 // SPDX-License-Identifier: MIT
 
-#include <array>
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <cstdint>
 #include <string>
 
 #include "straw/straw.h"
 
-constexpr auto* urlv8 = "test/data/4DNFIZ1ZVXC8.hic8";
-constexpr auto* urlv9 = "test/data/4DNFIZ1ZVXC8.hic9";
+constexpr auto* pathV8 = "test/data/4DNFIZ1ZVXC8.hic8";
+constexpr auto* urlV8 = "https://www.dropbox.com/s/zt62d0d3fhbkha0/4DNFIZ1ZVXC8.hic8?dl=1";
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("HiCFile accessors") {
-    HiCFile f(urlv8);
+    SECTION("local") {
+        HiCFile f(pathV8);
 
-    CHECK(f.url() == urlv8);
-    CHECK(f.name() == urlv8);
-    CHECK(f.version() == 8);
-    CHECK(f.chromosomes().size() == 9);
-    CHECK(f.genomeID() == "dm6");
+        CHECK(f.url() == pathV8);
+        CHECK(f.name() == pathV8);
+        CHECK(f.version() == 8);
+        CHECK(f.chromosomes().size() == 9);
+        CHECK(f.genomeID() == "dm6");
 
-    CHECK(f.resolutions().size() == 10);
-    CHECK(f.resolutions().front() == 2500000);
-    CHECK(f.resolutions().back() == 1000);
+        CHECK(f.resolutions().size() == 10);
+        CHECK(f.resolutions().front() == 2500000);
+        CHECK(f.resolutions().back() == 1000);
+    }
+    SECTION("remote") {
+        HiCFile f(urlV8);
+
+        CHECK(f.url() == urlV8);
+        CHECK(f.name() == urlV8);
+        CHECK(f.version() == 8);
+        CHECK(f.chromosomes().size() == 9);
+        CHECK(f.genomeID() == "dm6");
+
+        CHECK(f.resolutions().size() == 10);
+        CHECK(f.resolutions().front() == 2500000);
+        CHECK(f.resolutions().back() == 1000);
+    }
+
+    SECTION("invalid") {
+        CHECK_THROWS(HiCFile("non-existing-file"));
+        CHECK_THROWS(HiCFile("https://localhost:non-existing-url"));
+        CHECK_THROWS(HiCFile("test/CMakeLists.txt"));
+    }
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("HiCFile footer cache") {
-    HiCFile f(urlv8);
+    HiCFile f(pathV8);
 
     REQUIRE(f.resolutions().size() == 10);
 
@@ -60,8 +80,9 @@ TEST_CASE("HiCFile footer cache") {
     CHECK(&sel1.chrom1Norm() != &sel3.chrom1Norm());
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("HiCFile getMatrixZoomData") {
-    HiCFile f(urlv8);
+    HiCFile f(pathV8);
 
     REQUIRE(f.chromosomes().size() == 9);
 
@@ -122,6 +143,7 @@ TEST_CASE("HiCFile getMatrixZoomData") {
     }
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("GenomicCoordinates") {
     SECTION("chrom-only") {
         const auto coord = GenomicCoordinates::fromString("chr1");

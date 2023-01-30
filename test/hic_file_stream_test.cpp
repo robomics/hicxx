@@ -10,8 +10,8 @@
 
 #include "straw/straw.h"
 
-constexpr auto* urlv8 = "test/data/4DNFIZ1ZVXC8.hic8";
-constexpr auto* urlv9 = "test/data/4DNFIZ1ZVXC8.hic9";
+constexpr auto* pathV8 = "test/data/4DNFIZ1ZVXC8.hic8";
+constexpr auto* pathV9 = "test/data/4DNFIZ1ZVXC8.hic9";
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("readHeader (v8)", "[v8]") {
@@ -20,8 +20,8 @@ TEST_CASE("readHeader (v8)", "[v8]") {
     constexpr auto* genomeID = "dm6";
     constexpr auto nChromosomes = 9;
 
-    const auto header = internal::HiCFileStream(urlv8).header();
-    CHECK(header.url == urlv8);
+    const auto header = internal::HiCFileStream(pathV8).header();
+    CHECK(header.url == pathV8);
     CHECK(header.masterIndexOffset == 131515430);
     CHECK(header.genomeID == genomeID);
     CHECK(header.nChromosomes() == nChromosomes);
@@ -42,9 +42,9 @@ TEST_CASE("readHeader (v9)", "[v9]") {
     constexpr auto* genomeID = "dm6";
     constexpr auto nChromosomes = 9;
 
-    const auto header = internal::HiCFileStream(urlv9).header();
+    const auto header = internal::HiCFileStream(pathV9).header();
 
-    CHECK(header.url == urlv9);
+    CHECK(header.url == pathV9);
     CHECK(header.masterIndexOffset == 130706734);
     CHECK(header.genomeID == genomeID);
     CHECK(header.nChromosomes() == nChromosomes);
@@ -60,7 +60,7 @@ TEST_CASE("readHeader (v9)", "[v9]") {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("readFooter (v8)", "[v8]") {
-    internal::HiCFileStream s(urlv8);
+    internal::HiCFileStream s(pathV8);
     const auto chr2L = s.header().chromosomes.at("chr2L");
     const auto chr2R = s.header().chromosomes.at("chr2R");
     // first 5 expected values
@@ -185,7 +185,7 @@ TEST_CASE("readFooter (v8)", "[v8]") {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("readFooter (v9)", "[v9]") {
-    internal::HiCFileStream s(urlv9);
+    internal::HiCFileStream s(pathV9);
     const auto chr2L = s.header().chromosomes.at("chr2L");
     const auto chr2R = s.header().chromosomes.at("chr2R");
     // first 5 expected values
