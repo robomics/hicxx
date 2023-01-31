@@ -16,7 +16,7 @@
 
 namespace hicxx::internal {
 
-class MatrixZoomData {
+class MatrixSelector {
     struct BinaryBuffer {
         std::string buffer{};
         std::size_t i{};
@@ -34,8 +34,8 @@ class MatrixZoomData {
     BinaryBuffer _buffer{};
 
    public:
-    MatrixZoomData() = delete;
-    MatrixZoomData(std::shared_ptr<HiCFileStream> fs, std::shared_ptr<const HiCFooter> footer);
+    MatrixSelector() = delete;
+    MatrixSelector(std::shared_ptr<HiCFileStream> fs, std::shared_ptr<const HiCFooter> footer);
 
     [[nodiscard]] const chromosome &chrom1() const noexcept;
     [[nodiscard]] const chromosome &chrom2() const noexcept;

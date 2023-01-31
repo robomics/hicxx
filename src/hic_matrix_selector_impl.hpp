@@ -22,7 +22,7 @@
 namespace hicxx::internal {
 
 template <typename T, typename std::enable_if<std::is_fundamental<T>::value>::type *>
-inline T MatrixZoomData::BinaryBuffer::read() {
+inline T MatrixSelector::BinaryBuffer::read() {
     static_assert(sizeof(char) == 1, "");
     assert(i < buffer.size());
     T x{};
@@ -32,61 +32,61 @@ inline T MatrixZoomData::BinaryBuffer::read() {
     return x;
 }
 
-inline MatrixZoomData::MatrixZoomData(std::shared_ptr<HiCFileStream> fs,
+inline MatrixSelector::MatrixSelector(std::shared_ptr<HiCFileStream> fs,
                                       std::shared_ptr<const HiCFooter> footer)
     : _fs(std::move(fs)), _footer(std::move(footer)), _blockMap(readBlockMap(*_fs, *_footer)) {}
 
-inline const chromosome &MatrixZoomData::chrom1() const noexcept { return _footer->chrom1(); }
+inline const chromosome &MatrixSelector::chrom1() const noexcept { return _footer->chrom1(); }
 
-inline const chromosome &MatrixZoomData::chrom2() const noexcept { return _footer->chrom2(); }
+inline const chromosome &MatrixSelector::chrom2() const noexcept { return _footer->chrom2(); }
 
-inline std::int64_t MatrixZoomData::resolution() const noexcept { return _footer->resolution(); }
+inline std::int64_t MatrixSelector::resolution() const noexcept { return _footer->resolution(); }
 
-inline MatrixType MatrixZoomData::matrixType() const noexcept { return _footer->matrixType(); }
+inline MatrixType MatrixSelector::matrixType() const noexcept { return _footer->matrixType(); }
 
-inline NormalizationMethod MatrixZoomData::normalizationMethod() const noexcept {
+inline NormalizationMethod MatrixSelector::normalizationMethod() const noexcept {
     return _footer->normalization();
 }
 
-inline MatrixUnit MatrixZoomData::matrixUnit() const noexcept { return _footer->unit(); }
+inline MatrixUnit MatrixSelector::matrixUnit() const noexcept { return _footer->unit(); }
 
-inline std::int64_t MatrixZoomData::numBins1() const noexcept {
+inline std::int64_t MatrixSelector::numBins1() const noexcept {
     return (chrom1().length + resolution() - 1) / resolution();
 }
 
-inline std::int64_t MatrixZoomData::numBins2() const noexcept {
+inline std::int64_t MatrixSelector::numBins2() const noexcept {
     return (chrom2().length + resolution() - 1) / resolution();
 }
 
-inline bool MatrixZoomData::isIntra() const noexcept { return chrom1() == chrom2(); }
+inline bool MatrixSelector::isIntra() const noexcept { return chrom1() == chrom2(); }
 
-inline bool MatrixZoomData::isInter() const noexcept { return !isIntra(); }
+inline bool MatrixSelector::isInter() const noexcept { return !isIntra(); }
 
-inline const std::vector<double> &MatrixZoomData::chrom1Norm() const noexcept {
+inline const std::vector<double> &MatrixSelector::chrom1Norm() const noexcept {
     return _footer->c1Norm();
 }
 
-inline const std::vector<double> &MatrixZoomData::chrom2Norm() const noexcept {
+inline const std::vector<double> &MatrixSelector::chrom2Norm() const noexcept {
     return _footer->c2Norm();
 }
 
-inline double MatrixZoomData::avgCount() const {
+inline double MatrixSelector::avgCount() const {
     if (isInter()) {
         return _blockMap.sumCount / static_cast<double>(numBins1() * numBins2());
     }
     throw std::domain_error(
-        "MatrixZoomData::avgCount is not implemented for intra-chromosomal matrices");
+        "MatrixSelector::avgCount is not implemented for intra-chromosomal matrices");
 }
 
-inline void MatrixZoomData::fetch(std::vector<contactRecord> &buffer) {
+inline void MatrixSelector::fetch(std::vector<contactRecord> &buffer) {
     return fetch(0, chrom1().length, 0, chrom2().length, buffer);
 }
 
-inline void MatrixZoomData::fetch(const std::string &coord, std::vector<contactRecord> &buffer) {
+inline void MatrixSelector::fetch(const std::string &coord, std::vector<contactRecord> &buffer) {
     return fetch(coord, coord, buffer);
 }
 
-inline void MatrixZoomData::fetch(const std::string &coord1, const std::string &coord2,
+inline void MatrixSelector::fetch(const std::string &coord1, const std::string &coord2,
                                   std::vector<contactRecord> &buffer) {
     auto coord1_ = GenomicCoordinates::fromString(coord1, true);
     auto coord2_ = GenomicCoordinates::fromString(coord2, true);
@@ -94,12 +94,12 @@ inline void MatrixZoomData::fetch(const std::string &coord1, const std::string &
     return fetch(coord1_.start, coord1_.end, coord2_.start, coord2_.end, buffer);
 }
 
-inline void MatrixZoomData::fetch(std::int64_t start, std::int64_t end,
+inline void MatrixSelector::fetch(std::int64_t start, std::int64_t end,
                                   std::vector<contactRecord> &buffer) {
     return fetch(start, end, start, end, buffer);
 }
 
-inline void MatrixZoomData::fetch(std::int64_t start1, std::int64_t end1, std::int64_t start2,
+inline void MatrixSelector::fetch(std::int64_t start1, std::int64_t end1, std::int64_t start2,
                                   std::int64_t end2, std::vector<contactRecord> &buffer) {
     if (start1 > end1) {
         throw std::invalid_argument(
@@ -160,21 +160,21 @@ inline void MatrixZoomData::fetch(std::int64_t start1, std::int64_t end1, std::i
     }
 }
 
-inline void MatrixZoomData::fetch(std::vector<std::vector<float>> &buffer) {
+inline void MatrixSelector::fetch(std::vector<std::vector<float>> &buffer) {
     return fetch(0, chrom1().length, 0, chrom2().length, buffer);
 }
 
-inline void MatrixZoomData::fetch(const std::string &coord,
+inline void MatrixSelector::fetch(const std::string &coord,
                                   std::vector<std::vector<float>> &buffer) {
     return fetch(coord, coord, buffer);
 }
 
-inline void MatrixZoomData::fetch(std::int64_t start, std::int64_t end,
+inline void MatrixSelector::fetch(std::int64_t start, std::int64_t end,
                                   std::vector<std::vector<float>> &buffer) {
     return fetch(start, end, start, end, buffer);
 }
 
-inline void MatrixZoomData::fetch(const std::string &coord1, const std::string &coord2,
+inline void MatrixSelector::fetch(const std::string &coord1, const std::string &coord2,
                                   std::vector<std::vector<float>> &buffer) {
     const auto coord1_ = GenomicCoordinates::fromString(coord1, true);
     const auto coord2_ = GenomicCoordinates::fromString(coord2, true);
@@ -182,7 +182,7 @@ inline void MatrixZoomData::fetch(const std::string &coord1, const std::string &
     return fetch(coord1_.start, coord1_.end, coord2_.start, coord2_.end, buffer);
 }
 
-inline void MatrixZoomData::fetch(std::int64_t start1, std::int64_t end1, std::int64_t start2,
+inline void MatrixSelector::fetch(std::int64_t start1, std::int64_t end1, std::int64_t start2,
                                   std::int64_t end2, std::vector<std::vector<float>> &buffer) {
     const auto records = [&]() {
         std::vector<contactRecord> records_;
@@ -216,7 +216,7 @@ inline void MatrixZoomData::fetch(std::int64_t start1, std::int64_t end1, std::i
     }
 }
 
-inline void MatrixZoomData::processInteraction(contactRecord &record) {
+inline void MatrixSelector::processInteraction(contactRecord &record) {
     const auto &c1Norm = _footer->c1Norm();
     const auto &c2Norm = _footer->c2Norm();
     const auto &expected = _footer->expectedValues();
@@ -260,7 +260,7 @@ inline void MatrixZoomData::processInteraction(contactRecord &record) {
     record.count /= expectedCount;
 }
 
-inline void MatrixZoomData::readBlockOfInteractionsV6(BinaryBuffer &src,
+inline void MatrixSelector::readBlockOfInteractionsV6(BinaryBuffer &src,
                                                       std::vector<contactRecord> &dest) {
     assert(src.i == sizeof(std::int32_t));
 
@@ -285,7 +285,7 @@ inline void MatrixZoomData::readBlockOfInteractionsV6(BinaryBuffer &src,
     return;
 }
 
-inline void MatrixZoomData::readBlockOfInteractions(indexEntry idx,
+inline void MatrixSelector::readBlockOfInteractions(indexEntry idx,
                                                     std::vector<contactRecord> &buffer) {
     buffer.clear();
     if (idx.size <= 0) {
@@ -341,7 +341,7 @@ inline void MatrixZoomData::readBlockOfInteractions(indexEntry idx,
     }
 }
 
-inline void MatrixZoomData::readBlockOfInteractionsType1Dispatcher(
+inline void MatrixSelector::readBlockOfInteractionsType1Dispatcher(
     bool i16Bin1, bool i16Bin2, bool i16Counts, std::int32_t bin1Offset, std::int32_t bin2Offset,
     BinaryBuffer &src, std::vector<contactRecord> &dest) noexcept {
     using BS = std::int16_t;  // Short type for bins
@@ -383,7 +383,7 @@ inline void MatrixZoomData::readBlockOfInteractionsType1Dispatcher(
 }
 
 template <typename Bin1Type, typename Bin2Type, typename CountType>
-inline void MatrixZoomData::readBlockOfInteractionsType1(
+inline void MatrixSelector::readBlockOfInteractionsType1(
     std::int32_t bin1Offset, std::int32_t bin2Offset, BinaryBuffer &src,
     std::vector<contactRecord> &dest) noexcept {
     using i16 = std::int16_t;
@@ -419,7 +419,7 @@ inline void MatrixZoomData::readBlockOfInteractionsType1(
 }
 
 template <typename CountType>
-inline void MatrixZoomData::readBlockOfInteractionsType2(
+inline void MatrixSelector::readBlockOfInteractionsType2(
     std::int32_t bin1Offset, std::int32_t bin2Offset, BinaryBuffer &src,
     std::vector<contactRecord> &dest) noexcept {
     using i16 = std::int16_t;
@@ -454,14 +454,14 @@ inline void MatrixZoomData::readBlockOfInteractionsType2(
     }
 }
 
-inline BlockMap MatrixZoomData::readBlockMap(HiCFileStream &fs, const HiCFooter &footer) {
+inline BlockMap MatrixSelector::readBlockMap(HiCFileStream &fs, const HiCFooter &footer) {
     BlockMap buffer{};
     fs.readBlockMap(footer.fileOffset(), footer.chrom1(), footer.chrom2(), footer.unit(),
                     footer.resolution(), buffer);
     return buffer;
 }
 
-inline void MatrixZoomData::readBlockNumbers(std::int64_t bin1, std::int64_t bin2,
+inline void MatrixSelector::readBlockNumbers(std::int64_t bin1, std::int64_t bin2,
                                              std::int64_t bin3, std::int64_t bin4,
                                              std::set<std::size_t> &buffer) const {
     const auto blockBinCount = _blockMap.blockBinCount;
@@ -486,7 +486,7 @@ inline void MatrixZoomData::readBlockNumbers(std::int64_t bin1, std::int64_t bin
     }
 }
 
-inline void MatrixZoomData::readBlockNumbersV9Intra(std::int64_t bin1, std::int64_t bin2,
+inline void MatrixSelector::readBlockNumbersV9Intra(std::int64_t bin1, std::int64_t bin2,
                                                     std::int64_t bin3, std::int64_t bin4,
                                                     std::set<std::size_t> &buffer) const {
     const auto blockBinCount = _blockMap.blockBinCount;

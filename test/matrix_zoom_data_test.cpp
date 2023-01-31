@@ -45,19 +45,19 @@ static N sumCounts(const std::vector<contactRecord>& buffer) {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("matrixZoomData accessors") {
-    const auto mzd = HiCFile(pathV8).getMatrixZoomData(
+    const auto sel = HiCFile(pathV8).getMatrixSelector(
         "chr2L", MatrixType::observed, NormalizationMethod::NONE, MatrixUnit::BP, 2500000);
 
-    CHECK(mzd.chrom1().name == "chr2L");
-    CHECK(mzd.chrom2().name == "chr2L");
-    CHECK(mzd.matrixType() == MatrixType::observed);
-    CHECK(mzd.normalizationMethod() == NormalizationMethod::NONE);
-    CHECK(mzd.matrixUnit() == MatrixUnit::BP);
-    CHECK(mzd.resolution() == 2500000);
+    CHECK(sel.chrom1().name == "chr2L");
+    CHECK(sel.chrom2().name == "chr2L");
+    CHECK(sel.matrixType() == MatrixType::observed);
+    CHECK(sel.normalizationMethod() == NormalizationMethod::NONE);
+    CHECK(sel.matrixUnit() == MatrixUnit::BP);
+    CHECK(sel.resolution() == 2500000);
 
-    REQUIRE(mzd.chrom1().length == 23513712);
-    CHECK(mzd.numBins1() == 10);
-    CHECK(mzd.numBins2() == 10);
+    REQUIRE(sel.chrom1().length == 23513712);
+    CHECK(sel.numBins1() == 10);
+    CHECK(sel.numBins2() == 10);
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
@@ -66,7 +66,7 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
     SECTION("v8") {
         SECTION("intra-chromosomal") {
             HiCFile(pathV8)
-                .getMatrixZoomData("chr2L", MatrixType::observed, NormalizationMethod::NONE,
+                .getMatrixSelector("chr2L", MatrixType::observed, NormalizationMethod::NONE,
                                    MatrixUnit::BP, 10000)
                 .fetch(buffer);
             CHECK(buffer.size() == 1433133);
@@ -88,7 +88,7 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
         }
         SECTION("inter-chromosomal") {
             HiCFile(pathV8)
-                .getMatrixZoomData("chr2L", "chr4", MatrixType::observed, NormalizationMethod::NONE,
+                .getMatrixSelector("chr2L", "chr4", MatrixType::observed, NormalizationMethod::NONE,
                                    MatrixUnit::BP, 10000)
                 .fetch(buffer);
             CHECK(buffer.size() == 56743);
@@ -112,7 +112,7 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
     SECTION("v9") {
         SECTION("intra-chromosomal") {
             HiCFile(pathV9)
-                .getMatrixZoomData("chr2L", MatrixType::observed, NormalizationMethod::NONE,
+                .getMatrixSelector("chr2L", MatrixType::observed, NormalizationMethod::NONE,
                                    MatrixUnit::BP, 10000)
                 .fetch(buffer);
             CHECK(buffer.size() == 1433133);
@@ -134,7 +134,7 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
         }
         SECTION("inter-chromosomal") {
             HiCFile(pathV9)
-                .getMatrixZoomData("chr2L", "chr4", MatrixType::observed, NormalizationMethod::NONE,
+                .getMatrixSelector("chr2L", "chr4", MatrixType::observed, NormalizationMethod::NONE,
                                    MatrixUnit::BP, 10000)
                 .fetch(buffer);
             CHECK(buffer.size() == 56743);
@@ -157,7 +157,7 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
 
         SECTION("inter-chromosomal") {
             HiCFile(pathV9)
-                .getMatrixZoomData("chr2L", "chr4", MatrixType::observed, NormalizationMethod::NONE,
+                .getMatrixSelector("chr2L", "chr4", MatrixType::observed, NormalizationMethod::NONE,
                                    MatrixUnit::BP, 10000)
                 .fetch(buffer);
             CHECK(buffer.size() == 56743);
@@ -182,7 +182,7 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
     SECTION("sub-queries") {
         SECTION("single pixel") {
             HiCFile(pathV9)
-                .getMatrixZoomData("chr2L", MatrixType::observed, NormalizationMethod::NONE,
+                .getMatrixSelector("chr2L", MatrixType::observed, NormalizationMethod::NONE,
                                    MatrixUnit::BP, 10000)
                 .fetch("100000-100001", "100000-100001", buffer);
             REQUIRE(buffer.size() == 1);
@@ -191,7 +191,7 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
 
         SECTION("upper-triangle") {
             HiCFile(pathV9)
-                .getMatrixZoomData("chr2L", MatrixType::observed, NormalizationMethod::NONE,
+                .getMatrixSelector("chr2L", MatrixType::observed, NormalizationMethod::NONE,
                                    MatrixUnit::BP, 10000)
                 .fetch(123456, 200001, 0, 200001, buffer);
             CHECK(buffer.size() == 140);
@@ -200,7 +200,7 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
 
         SECTION("lower-triangle") {
             HiCFile(pathV9)
-                .getMatrixZoomData("chr2L", MatrixType::observed, NormalizationMethod::NONE,
+                .getMatrixSelector("chr2L", MatrixType::observed, NormalizationMethod::NONE,
                                    MatrixUnit::BP, 10000)
                 .fetch(0, 200001, 123456, 200001, buffer);
             CHECK(buffer.size() == 140);
@@ -209,7 +209,7 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
 
         SECTION("inter-chromosomal") {
             HiCFile(pathV9)
-                .getMatrixZoomData("chr2L", "chr4", MatrixType::observed, NormalizationMethod::NONE,
+                .getMatrixSelector("chr2L", "chr4", MatrixType::observed, NormalizationMethod::NONE,
                                    MatrixUnit::BP, 10000)
                 .fetch(123456, 200001, 0, 200001, buffer);
             CHECK(buffer.size() == 55);
@@ -221,28 +221,28 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
         HiCFile hic(pathV9);
 
         SECTION("invalid chromosome") {
-            CHECK_THROWS(hic.getMatrixZoomData("chr123", MatrixType::observed,
+            CHECK_THROWS(hic.getMatrixSelector("chr123", MatrixType::observed,
                                                NormalizationMethod::NONE, MatrixUnit::BP, 10000));
-            CHECK_THROWS(hic.getMatrixZoomData(999, MatrixType::observed, NormalizationMethod::NONE,
+            CHECK_THROWS(hic.getMatrixSelector(999, MatrixType::observed, NormalizationMethod::NONE,
                                                MatrixUnit::BP, 10000));
         }
         SECTION("invalid resolution") {
-            CHECK_THROWS(hic.getMatrixZoomData("chr2L", MatrixType::observed,
+            CHECK_THROWS(hic.getMatrixSelector("chr2L", MatrixType::observed,
                                                NormalizationMethod::NONE, MatrixUnit::BP, -1));
         }
         SECTION("invalid unit") {
-            CHECK_THROWS(hic.getMatrixZoomData("chr2L", MatrixType::observed,
+            CHECK_THROWS(hic.getMatrixSelector("chr2L", MatrixType::observed,
                                                NormalizationMethod::NONE, MatrixUnit::FRAG, 10000));
         }
         SECTION("expected + norm") {
-            CHECK_THROWS(hic.getMatrixZoomData("chr2L", MatrixType::expected,
+            CHECK_THROWS(hic.getMatrixSelector("chr2L", MatrixType::expected,
                                                NormalizationMethod::VC, MatrixUnit::BP, 10000));
         }
         SECTION("invalid range") {
-            CHECK_THROWS(hic.getMatrixZoomData("chr2L", MatrixType::observed,
+            CHECK_THROWS(hic.getMatrixSelector("chr2L", MatrixType::observed,
                                                NormalizationMethod::NONE, MatrixUnit::BP, 10000)
                              .fetch(1000, 0, buffer));
-            CHECK_THROWS(hic.getMatrixZoomData("chr2L", MatrixType::observed,
+            CHECK_THROWS(hic.getMatrixSelector("chr2L", MatrixType::observed,
                                                NormalizationMethod::NONE, MatrixUnit::BP, 10000)
                              .fetch(0, 1'000'000'000, buffer));
         }
@@ -255,7 +255,7 @@ TEST_CASE("matrixData fetch (observed VC BP 10000)") {
     SECTION("v8") {
         SECTION("intra-chromosomal") {
             HiCFile(pathV8)
-                .getMatrixZoomData("chr2L", MatrixType::observed, NormalizationMethod::VC,
+                .getMatrixSelector("chr2L", MatrixType::observed, NormalizationMethod::VC,
                                    MatrixUnit::BP, 10000)
                 .fetch(buffer);
             CHECK(buffer.size() == 1433133);
@@ -264,7 +264,7 @@ TEST_CASE("matrixData fetch (observed VC BP 10000)") {
         }
         SECTION("inter-chromosomal") {
             HiCFile(pathV8)
-                .getMatrixZoomData("chr2L", "chr4", MatrixType::observed, NormalizationMethod::VC,
+                .getMatrixSelector("chr2L", "chr4", MatrixType::observed, NormalizationMethod::VC,
                                    MatrixUnit::BP, 10000)
                 .fetch(buffer);
             CHECK(buffer.size() == 56743);
@@ -275,7 +275,7 @@ TEST_CASE("matrixData fetch (observed VC BP 10000)") {
     SECTION("v9") {
         SECTION("intra-chromosomal") {
             HiCFile(pathV9)
-                .getMatrixZoomData("chr2L", MatrixType::observed, NormalizationMethod::VC,
+                .getMatrixSelector("chr2L", MatrixType::observed, NormalizationMethod::VC,
                                    MatrixUnit::BP, 10000)
                 .fetch(buffer);
             CHECK(buffer.size() == 1433133);
@@ -284,7 +284,7 @@ TEST_CASE("matrixData fetch (observed VC BP 10000)") {
         }
         SECTION("inter-chromosomal") {
             HiCFile(pathV9)
-                .getMatrixZoomData("chr2L", "chr4", MatrixType::observed, NormalizationMethod::VC,
+                .getMatrixSelector("chr2L", "chr4", MatrixType::observed, NormalizationMethod::VC,
                                    MatrixUnit::BP, 10000)
                 .fetch(buffer);
             CHECK(buffer.size() == 56743);
@@ -300,7 +300,7 @@ TEST_CASE("matrixData fetch (expected NONE BP 10000)") {
     SECTION("v8") {
         SECTION("intra-chromosomal") {
             HiCFile(pathV8)
-                .getMatrixZoomData("chr2L", MatrixType::expected, NormalizationMethod::NONE,
+                .getMatrixSelector("chr2L", MatrixType::expected, NormalizationMethod::NONE,
                                    MatrixUnit::BP, 10000)
                 .fetch(buffer);
             CHECK(buffer.size() == 1433133);
@@ -309,7 +309,7 @@ TEST_CASE("matrixData fetch (expected NONE BP 10000)") {
         }
         SECTION("inter-chromosomal") {
             HiCFile(pathV8)
-                .getMatrixZoomData("chr2L", "chr4", MatrixType::expected, NormalizationMethod::NONE,
+                .getMatrixSelector("chr2L", "chr4", MatrixType::expected, NormalizationMethod::NONE,
                                    MatrixUnit::BP, 10000)
                 .fetch(buffer);
             CHECK(buffer.size() == 56743);
@@ -320,7 +320,7 @@ TEST_CASE("matrixData fetch (expected NONE BP 10000)") {
     SECTION("v9") {
         SECTION("intra-chromosomal") {
             HiCFile(pathV9)
-                .getMatrixZoomData("chr2L", MatrixType::expected, NormalizationMethod::NONE,
+                .getMatrixSelector("chr2L", MatrixType::expected, NormalizationMethod::NONE,
                                    MatrixUnit::BP, 10000)
                 .fetch(buffer);
             CHECK(buffer.size() == 1433133);
@@ -329,7 +329,7 @@ TEST_CASE("matrixData fetch (expected NONE BP 10000)") {
         }
         SECTION("inter-chromosomal") {
             HiCFile(pathV9)
-                .getMatrixZoomData("chr2L", "chr4", MatrixType::expected, NormalizationMethod::NONE,
+                .getMatrixSelector("chr2L", "chr4", MatrixType::expected, NormalizationMethod::NONE,
                                    MatrixUnit::BP, 10000)
                 .fetch(buffer);
             CHECK(buffer.size() == 56743);
@@ -345,7 +345,7 @@ TEST_CASE("matrixData fetch (oe NONE BP 10000)") {
     SECTION("v8") {
         SECTION("intra-chromosomal") {
             HiCFile(pathV8)
-                .getMatrixZoomData("chr2L", MatrixType::oe, NormalizationMethod::NONE,
+                .getMatrixSelector("chr2L", MatrixType::oe, NormalizationMethod::NONE,
                                    MatrixUnit::BP, 10000)
                 .fetch(buffer);
             CHECK(buffer.size() == 1433133);
@@ -354,7 +354,7 @@ TEST_CASE("matrixData fetch (oe NONE BP 10000)") {
         }
         SECTION("inter-chromosomal") {
             HiCFile(pathV8)
-                .getMatrixZoomData("chr2L", "chr4", MatrixType::oe, NormalizationMethod::NONE,
+                .getMatrixSelector("chr2L", "chr4", MatrixType::oe, NormalizationMethod::NONE,
                                    MatrixUnit::BP, 10000)
                 .fetch(buffer);
             CHECK(buffer.size() == 56743);
@@ -365,7 +365,7 @@ TEST_CASE("matrixData fetch (oe NONE BP 10000)") {
     SECTION("v9") {
         SECTION("intra-chromosomal") {
             HiCFile(pathV9)
-                .getMatrixZoomData("chr2L", MatrixType::oe, NormalizationMethod::NONE,
+                .getMatrixSelector("chr2L", MatrixType::oe, NormalizationMethod::NONE,
                                    MatrixUnit::BP, 10000)
                 .fetch(buffer);
             CHECK(buffer.size() == 1433133);
@@ -374,7 +374,7 @@ TEST_CASE("matrixData fetch (oe NONE BP 10000)") {
         }
         SECTION("inter-chromosomal") {
             HiCFile(pathV9)
-                .getMatrixZoomData("chr2L", "chr4", MatrixType::oe, NormalizationMethod::NONE,
+                .getMatrixSelector("chr2L", "chr4", MatrixType::oe, NormalizationMethod::NONE,
                                    MatrixUnit::BP, 10000)
                 .fetch(buffer);
             CHECK(buffer.size() == 56743);

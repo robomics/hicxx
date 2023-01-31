@@ -39,29 +39,29 @@ class HiCFile {
     [[nodiscard]] const std::string &genomeID() const noexcept;
     [[nodiscard]] const std::vector<std::int32_t> &resolutions() const noexcept;
 
-    [[nodiscard]] internal::MatrixZoomData getMatrixZoomData(const chromosome &chrom,
+    [[nodiscard]] internal::MatrixSelector getMatrixSelector(const chromosome &chrom,
                                                              MatrixType matrixType,
                                                              NormalizationMethod norm,
                                                              MatrixUnit unit,
                                                              std::int32_t resolution);
-    [[nodiscard]] internal::MatrixZoomData getMatrixZoomData(const std::string &chromName,
+    [[nodiscard]] internal::MatrixSelector getMatrixSelector(const std::string &chromName,
                                                              MatrixType matrixType,
                                                              NormalizationMethod norm,
                                                              MatrixUnit unit,
                                                              std::int32_t resolution);
-    [[nodiscard]] internal::MatrixZoomData getMatrixZoomData(std::int32_t chromId,
+    [[nodiscard]] internal::MatrixSelector getMatrixSelector(std::int32_t chromId,
                                                              MatrixType matrixType,
                                                              NormalizationMethod norm,
                                                              MatrixUnit unit,
                                                              std::int32_t resolution);
 
-    [[nodiscard]] internal::MatrixZoomData getMatrixZoomData(
+    [[nodiscard]] internal::MatrixSelector getMatrixSelector(
         const chromosome &chrom1, const chromosome &chrom2, MatrixType matrixType,
         NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution);
-    [[nodiscard]] internal::MatrixZoomData getMatrixZoomData(
+    [[nodiscard]] internal::MatrixSelector getMatrixSelector(
         const std::string &chromName1, const std::string &chromName2, MatrixType matrixType,
         NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution);
-    [[nodiscard]] internal::MatrixZoomData getMatrixZoomData(
+    [[nodiscard]] internal::MatrixSelector getMatrixSelector(
         std::int32_t chromId1, std::int32_t chromId2, MatrixType matrixType,
         NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution);
 

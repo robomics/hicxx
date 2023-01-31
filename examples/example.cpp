@@ -56,7 +56,7 @@ int main(int argc, char** argv) noexcept {
         }
 
         auto selector =
-            hic.getMatrixZoomData(coord1.chrom, coord2.chrom, matrixType, norm, unit, resolution);
+            hic.getMatrixSelector(coord1.chrom, coord2.chrom, matrixType, norm, unit, resolution);
         std::vector<contactRecord> buffer{};
         selector.fetch(coord1.start, coord1.end, coord2.start, coord2.end, buffer);
         std::sort(buffer.begin(), buffer.end());

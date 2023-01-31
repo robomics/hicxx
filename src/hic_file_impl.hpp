@@ -52,35 +52,35 @@ inline std::shared_ptr<const internal::HiCFooter> HiCFile::getFooter(
     return node.first->second;
 }
 
-inline internal::MatrixZoomData HiCFile::getMatrixZoomData(const chromosome& chrom,
+inline internal::MatrixSelector HiCFile::getMatrixSelector(const chromosome& chrom,
                                                            MatrixType matrixType,
                                                            NormalizationMethod norm,
                                                            MatrixUnit unit,
                                                            std::int32_t resolution) {
-    return getMatrixZoomData(chrom, chrom, matrixType, norm, unit, resolution);
+    return getMatrixSelector(chrom, chrom, matrixType, norm, unit, resolution);
 }
-inline internal::MatrixZoomData HiCFile::getMatrixZoomData(const std::string& chromName,
+inline internal::MatrixSelector HiCFile::getMatrixSelector(const std::string& chromName,
                                                            MatrixType matrixType,
                                                            NormalizationMethod norm,
                                                            MatrixUnit unit,
                                                            std::int32_t resolution) {
-    return getMatrixZoomData(chromName, chromName, matrixType, norm, unit, resolution);
+    return getMatrixSelector(chromName, chromName, matrixType, norm, unit, resolution);
 }
-inline internal::MatrixZoomData HiCFile::getMatrixZoomData(std::int32_t chromId,
+inline internal::MatrixSelector HiCFile::getMatrixSelector(std::int32_t chromId,
                                                            MatrixType matrixType,
                                                            NormalizationMethod norm,
                                                            MatrixUnit unit,
                                                            std::int32_t resolution) {
-    return getMatrixZoomData(chromId, chromId, matrixType, norm, unit, resolution);
+    return getMatrixSelector(chromId, chromId, matrixType, norm, unit, resolution);
 }
 
-inline internal::MatrixZoomData HiCFile::getMatrixZoomData(
+inline internal::MatrixSelector HiCFile::getMatrixSelector(
     const chromosome& chrom1, const chromosome& chrom2, MatrixType matrixType,
     NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution) {
-    return getMatrixZoomData(chrom1.index, chrom2.index, matrixType, norm, unit, resolution);
+    return getMatrixSelector(chrom1.index, chrom2.index, matrixType, norm, unit, resolution);
 }
 
-inline internal::MatrixZoomData HiCFile::getMatrixZoomData(
+inline internal::MatrixSelector HiCFile::getMatrixSelector(
     const std::string& chromName1, const std::string& chromName2, MatrixType matrixType,
     NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution) {
     const auto it1 = chromosomes().find(chromName1);
@@ -89,7 +89,7 @@ inline internal::MatrixZoomData HiCFile::getMatrixZoomData(
             fmt::format(FMT_STRING("unable to find chromosome named {}"), chromName1));
     }
     if (chromName1 == chromName2) {
-        return getMatrixZoomData(it1->second, it1->second, matrixType, norm, unit, resolution);
+        return getMatrixSelector(it1->second, it1->second, matrixType, norm, unit, resolution);
     }
 
     const auto it2 = chromosomes().find(chromName2);
@@ -98,10 +98,10 @@ inline internal::MatrixZoomData HiCFile::getMatrixZoomData(
             fmt::format(FMT_STRING("unable to find chromosome named {}"), chromName2));
     }
 
-    return getMatrixZoomData(it1->second, it2->second, matrixType, norm, unit, resolution);
+    return getMatrixSelector(it1->second, it2->second, matrixType, norm, unit, resolution);
 }
 
-inline internal::MatrixZoomData HiCFile::getMatrixZoomData(
+inline internal::MatrixSelector HiCFile::getMatrixSelector(
     std::int32_t chromId1, std::int32_t chromId2, MatrixType matrixType, NormalizationMethod norm,
     MatrixUnit unit, std::int32_t resolution) {
     if (chromId1 >= std::int64_t(chromosomes().size())) {
@@ -131,7 +131,7 @@ inline internal::MatrixZoomData HiCFile::getMatrixZoomData(
             resolution, fmt::join(_fs->header().resolutions, ", ")));
     }
 
-    return internal::MatrixZoomData(
+    return internal::MatrixSelector(
         _fs, getFooter(chromId1, chromId2, matrixType, norm, unit, resolution));
 }
 

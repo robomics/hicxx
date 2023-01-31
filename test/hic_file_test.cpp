@@ -60,15 +60,15 @@ TEST_CASE("HiCFile footer cache") {
 
     CHECK(f.numCachedFooters() == 0);
     for (const auto res : f.resolutions()) {
-        std::ignore = f.getMatrixZoomData("chr2L", MatrixType::observed, NormalizationMethod::NONE,
+        std::ignore = f.getMatrixSelector("chr2L", MatrixType::observed, NormalizationMethod::NONE,
                                           MatrixUnit::BP, res);
     }
 
     CHECK(f.numCachedFooters() == f.resolutions().size());
 
-    const auto sel1 = f.getMatrixZoomData("chr2L", MatrixType::observed, NormalizationMethod::NONE,
+    const auto sel1 = f.getMatrixSelector("chr2L", MatrixType::observed, NormalizationMethod::NONE,
                                           MatrixUnit::BP, 2500000);
-    const auto sel2 = f.getMatrixZoomData("chr2L", MatrixType::observed, NormalizationMethod::NONE,
+    const auto sel2 = f.getMatrixSelector("chr2L", MatrixType::observed, NormalizationMethod::NONE,
                                           MatrixUnit::BP, 2500000);
 
     // this check relies on the fact that chrom1Norm are stored in the footer, and that footers are
@@ -78,7 +78,7 @@ TEST_CASE("HiCFile footer cache") {
     f.purgeFooterCache();
     CHECK(f.numCachedFooters() == 0);
 
-    const auto sel3 = f.getMatrixZoomData("chr2L", MatrixType::observed, NormalizationMethod::NONE,
+    const auto sel3 = f.getMatrixSelector("chr2L", MatrixType::observed, NormalizationMethod::NONE,
                                           MatrixUnit::BP, 2500000);
 
     CHECK(f.numCachedFooters() == 1);
@@ -86,7 +86,7 @@ TEST_CASE("HiCFile footer cache") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("HiCFile getMatrixZoomData") {
+TEST_CASE("HiCFile getMatrixSelector") {
     HiCFile f(pathV8);
 
     REQUIRE(f.chromosomes().size() == 9);
@@ -100,51 +100,51 @@ TEST_CASE("HiCFile getMatrixZoomData") {
     const auto chrom2 = f.chromosomes().at("chr2R");
 
     SECTION("intra-chromosomal") {
-        auto sel = f.getMatrixZoomData(chrom1.name, mt, norm, unit, res);
+        auto sel = f.getMatrixSelector(chrom1.name, mt, norm, unit, res);
         CHECK(sel.chrom1() == chrom1);
         CHECK(sel.isIntra());
 
-        sel = f.getMatrixZoomData(chrom1.index, mt, norm, unit, res);
+        sel = f.getMatrixSelector(chrom1.index, mt, norm, unit, res);
         CHECK(sel.chrom1() == chrom1);
         CHECK(sel.isIntra());
 
-        sel = f.getMatrixZoomData(chrom1, mt, norm, unit, res);
+        sel = f.getMatrixSelector(chrom1, mt, norm, unit, res);
         CHECK(sel.chrom1() == chrom1);
         CHECK(sel.isIntra());
     }
 
     SECTION("inter-chromosomal") {
-        auto sel = f.getMatrixZoomData(chrom1.name, chrom2.name, mt, norm, unit, res);
+        auto sel = f.getMatrixSelector(chrom1.name, chrom2.name, mt, norm, unit, res);
         CHECK(sel.chrom1() == chrom1);
         CHECK(sel.chrom2() == chrom2);
 
-        sel = f.getMatrixZoomData(chrom1.index, chrom2.index, mt, norm, unit, res);
+        sel = f.getMatrixSelector(chrom1.index, chrom2.index, mt, norm, unit, res);
         CHECK(sel.chrom1() == chrom1);
         CHECK(sel.chrom2() == chrom2);
 
-        sel = f.getMatrixZoomData(chrom1, chrom2, mt, norm, unit, res);
+        sel = f.getMatrixSelector(chrom1, chrom2, mt, norm, unit, res);
         CHECK(sel.chrom1() == chrom1);
         CHECK(sel.chrom2() == chrom2);
 
-        sel = f.getMatrixZoomData(chrom2, chrom1, mt, norm, unit, res);
+        sel = f.getMatrixSelector(chrom2, chrom1, mt, norm, unit, res);
         CHECK(sel.chrom1() == chrom1);
         CHECK(sel.chrom2() == chrom2);
     }
 
     SECTION("invalid chromosome") {
-        CHECK_THROWS(f.getMatrixZoomData("not-a-chromosome", mt, norm, unit, res));
-        CHECK_THROWS(f.getMatrixZoomData(chrom1.name, "not-a-chromosome", mt, norm, unit, res));
-        CHECK_THROWS(f.getMatrixZoomData(999, mt, norm, unit, res));
-        CHECK_THROWS(f.getMatrixZoomData(chrom1.index, 999, mt, norm, unit, res));
+        CHECK_THROWS(f.getMatrixSelector("not-a-chromosome", mt, norm, unit, res));
+        CHECK_THROWS(f.getMatrixSelector(chrom1.name, "not-a-chromosome", mt, norm, unit, res));
+        CHECK_THROWS(f.getMatrixSelector(999, mt, norm, unit, res));
+        CHECK_THROWS(f.getMatrixSelector(chrom1.index, 999, mt, norm, unit, res));
     }
 
     SECTION("malformed") {
-        CHECK_THROWS(f.getMatrixZoomData(chrom1, mt, norm, unit, 123));
+        CHECK_THROWS(f.getMatrixSelector(chrom1, mt, norm, unit, 123));
         CHECK_THROWS(
-            f.getMatrixZoomData(chrom1, MatrixType::expected, NormalizationMethod::VC, unit, res));
+            f.getMatrixSelector(chrom1, MatrixType::expected, NormalizationMethod::VC, unit, res));
 
         // Matrix does not have contacts for fragments
-        CHECK_THROWS(f.getMatrixZoomData(chrom1, mt, norm, MatrixUnit::FRAG, res));
+        CHECK_THROWS(f.getMatrixSelector(chrom1, mt, norm, MatrixUnit::FRAG, res));
     }
 }
 
