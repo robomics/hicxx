@@ -30,6 +30,7 @@ class HiCFile {
     FooterCacheT _footers{};
 
    public:
+    static constexpr std::size_t DEFAULT_BLOCK_CACHE_CAPACITY = 500UL << 20U;  // ~500MB
     explicit HiCFile(std::string url_);
 
     [[nodiscard]] const std::string &url() const noexcept;
@@ -39,31 +40,29 @@ class HiCFile {
     [[nodiscard]] const std::string &genomeID() const noexcept;
     [[nodiscard]] const std::vector<std::int32_t> &resolutions() const noexcept;
 
-    [[nodiscard]] internal::MatrixSelector getMatrixSelector(const chromosome &chrom,
-                                                             MatrixType matrixType,
-                                                             NormalizationMethod norm,
-                                                             MatrixUnit unit,
-                                                             std::int32_t resolution);
-    [[nodiscard]] internal::MatrixSelector getMatrixSelector(const std::string &chromName,
-                                                             MatrixType matrixType,
-                                                             NormalizationMethod norm,
-                                                             MatrixUnit unit,
-                                                             std::int32_t resolution);
-    [[nodiscard]] internal::MatrixSelector getMatrixSelector(std::int32_t chromId,
-                                                             MatrixType matrixType,
-                                                             NormalizationMethod norm,
-                                                             MatrixUnit unit,
-                                                             std::int32_t resolution);
+    [[nodiscard]] internal::MatrixSelector getMatrixSelector(
+        const chromosome &chrom, MatrixType matrixType, NormalizationMethod norm, MatrixUnit unit,
+        std::int32_t resolution, std::size_t blockCacheCapacity = DEFAULT_BLOCK_CACHE_CAPACITY);
+    [[nodiscard]] internal::MatrixSelector getMatrixSelector(
+        const std::string &chromName, MatrixType matrixType, NormalizationMethod norm,
+        MatrixUnit unit, std::int32_t resolution,
+        std::size_t blockCacheCapacity = DEFAULT_BLOCK_CACHE_CAPACITY);
+    [[nodiscard]] internal::MatrixSelector getMatrixSelector(
+        std::int32_t chromId, MatrixType matrixType, NormalizationMethod norm, MatrixUnit unit,
+        std::int32_t resolution, std::size_t blockCacheCapacity = DEFAULT_BLOCK_CACHE_CAPACITY);
 
     [[nodiscard]] internal::MatrixSelector getMatrixSelector(
         const chromosome &chrom1, const chromosome &chrom2, MatrixType matrixType,
-        NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution);
+        NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution,
+        std::size_t blockCacheCapacity = DEFAULT_BLOCK_CACHE_CAPACITY);
     [[nodiscard]] internal::MatrixSelector getMatrixSelector(
         const std::string &chromName1, const std::string &chromName2, MatrixType matrixType,
-        NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution);
+        NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution,
+        std::size_t blockCacheCapacity = DEFAULT_BLOCK_CACHE_CAPACITY);
     [[nodiscard]] internal::MatrixSelector getMatrixSelector(
         std::int32_t chromId1, std::int32_t chromId2, MatrixType matrixType,
-        NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution);
+        NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution,
+        std::size_t blockCacheCapacity = DEFAULT_BLOCK_CACHE_CAPACITY);
 
     [[nodiscard]] std::size_t numCachedFooters() const noexcept;
     void purgeFooterCache();

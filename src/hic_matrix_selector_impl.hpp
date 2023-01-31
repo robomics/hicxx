@@ -33,8 +33,12 @@ inline T MatrixSelector::BinaryBuffer::read() {
 }
 
 inline MatrixSelector::MatrixSelector(std::shared_ptr<HiCFileStream> fs,
-                                      std::shared_ptr<const HiCFooter> footer)
-    : _fs(std::move(fs)), _footer(std::move(footer)), _blockMap(readBlockMap(*_fs, *_footer)) {}
+                                      std::shared_ptr<const HiCFooter> footer,
+                                      std::size_t blockCacheCapacity)
+    : _fs(std::move(fs)),
+      _footer(std::move(footer)),
+      _blockMap(readBlockMap(*_fs, *_footer)),
+      _blockCache(blockCacheCapacity) {}
 
 inline const chromosome &MatrixSelector::chrom1() const noexcept { return _footer->chrom1(); }
 
@@ -135,9 +139,13 @@ inline void MatrixSelector::fetch(std::int64_t start1, std::int64_t end1, std::i
 
     buffer.clear();
     for (auto blockNumber : _blockNumberBuff) {
-        readBlockOfInteractions(_blockMap.blocks[blockNumber], _contactRecordBuff);
+        const auto block =
+            readBlockOfInteractions(_blockMap.blocks[blockNumber], _contactRecordBuff);
+        if (!block) {
+            continue;
+        }
 
-        for (auto &&record : _contactRecordBuff) {
+        for (auto record : *block) {
             record.bin1_start *= std::int32_t(resolution());
             record.bin2_start *= std::int32_t(resolution());
 
@@ -285,11 +293,16 @@ inline void MatrixSelector::readBlockOfInteractionsV6(BinaryBuffer &src,
     return;
 }
 
-inline void MatrixSelector::readBlockOfInteractions(indexEntry idx,
-                                                    std::vector<contactRecord> &buffer) {
+inline std::shared_ptr<InteractionBlock> MatrixSelector::readBlockOfInteractions(
+    indexEntry idx, std::vector<contactRecord> &buffer) {
     buffer.clear();
     if (idx.size <= 0) {
-        return;
+        return {nullptr};
+    }
+
+    if (auto it = _blockCache.find(static_cast<std::size_t>(idx.position));
+        it != _blockCache.end()) {
+        return it->second;
     }
 
     _fs->readAndInflate(idx, _buffer.buffer);
@@ -299,7 +312,10 @@ inline void MatrixSelector::readBlockOfInteractions(indexEntry idx,
     buffer.resize(nRecords);
 
     if (_fs->version() == 6) {
-        return readBlockOfInteractionsV6(_buffer, buffer);
+        readBlockOfInteractionsV6(_buffer, buffer);
+        auto it =
+            _blockCache.emplace(static_cast<std::size_t>(idx.position), InteractionBlock(buffer));
+        return it.first->second;
     }
 
     const auto bin1Offset = _buffer.read<std::int32_t>();
@@ -327,18 +343,21 @@ inline void MatrixSelector::readBlockOfInteractions(indexEntry idx,
         case 1:
             readBlockOfInteractionsType1Dispatcher(i16Bin1, i16Bin2, i16Counts, bin1Offset,
                                                    bin2Offset, _buffer, buffer);
-            return;
+            break;
         case 2:
             if (i16Counts) {
                 readBlockOfInteractionsType2<std::int16_t>(bin1Offset, bin2Offset, _buffer, buffer);
-                return;
+                break;
             }
             readBlockOfInteractionsType2<float>(bin1Offset, bin2Offset, _buffer, buffer);
-            return;
+            break;
         default:
             assert(false);
             std::abort();
     }
+
+    auto it = _blockCache.emplace(static_cast<std::size_t>(idx.position), InteractionBlock(buffer));
+    return it.first->second;
 }
 
 inline void MatrixSelector::readBlockOfInteractionsType1Dispatcher(
@@ -516,6 +535,13 @@ inline void MatrixSelector::readBlockNumbersV9Intra(std::int64_t bin1, std::int6
             buffer.insert(static_cast<std::size_t>(depth * blockColumnCount + pad));
         }
     }
+}
+
+inline void MatrixSelector::clearBlockCache() noexcept { _blockCache.reset(); }
+inline double MatrixSelector::blockCacheHitRate() const noexcept { return _blockCache.hit_rate(); }
+inline std::size_t MatrixSelector::blockCacheSize() const noexcept { return _blockCache.size(); }
+inline std::size_t MatrixSelector::blockCacheSizeBytes() const noexcept {
+    return _blockCache.size_in_bytes();
 }
 
 }  // namespace hicxx::internal

@@ -12,6 +12,11 @@ FetchContent_Declare(
     GIT_TAG 9.1.0)
 
 FetchContent_Declare(
+    tsl-ordered-map
+    GIT_REPOSITORY https://github.com/Tessil/ordered-map
+    GIT_TAG v1.1.0)
+
+FetchContent_Declare(
     zlib-ng
     GIT_REPOSITORY https://github.com/zlib-ng/zlib-ng
     GIT_TAG 2.0.6)
@@ -23,10 +28,10 @@ endif()
 if(HICXX_USE_ZLIBNG)
     set(ZLIB_ENABLE_TESTS OFF)
     set(WITH_GTEST OFF)
-    FetchContent_MakeAvailable(fmt zlib-ng)
+    FetchContent_MakeAvailable(fmt tsl-ordered-map zlib-ng)
 else()
     find_package(ZLIB REQUIRED)
-    FetchContent_MakeAvailable(fmt)
+    FetchContent_MakeAvailable(fmt tsl-ordered-map)
 endif()
 
 target_sources(
@@ -48,8 +53,9 @@ target_link_libraries(
     hicxx
     INTERFACE hicxx_project_options
               hicxx_project_warnings
-              fmt::fmt-header-only
               $<$<BOOL:${HICXX_USE_CURL}>:CURL::libcurl>
+              fmt::fmt
+              tsl::ordered_map
               $<IF:$<BOOL:${HICXX_USE_ZLIBNG}>,zlib,ZLIB::ZLIB>)
 
 target_compile_definitions(hicxx INTERFACE FMT_ENFORCE_COMPILE_STRING $<$<BOOL:${HICXX_USE_CURL}>:HICXX_USE_CURL>

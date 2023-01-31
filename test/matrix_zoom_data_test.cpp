@@ -44,7 +44,7 @@ static N sumCounts(const std::vector<contactRecord>& buffer) {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("matrixZoomData accessors") {
+TEST_CASE("MatrixSelector accessors") {
     const auto sel = HiCFile(pathV8).getMatrixSelector(
         "chr2L", MatrixType::observed, NormalizationMethod::NONE, MatrixUnit::BP, 2500000);
 
@@ -61,7 +61,37 @@ TEST_CASE("matrixZoomData accessors") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
+TEST_CASE("MatrixSelector LRU cache") {
+    std::vector<contactRecord> buffer;
+    HiCFile f(pathV8);
+
+    auto sel = f.getMatrixSelector("chr2L", MatrixType::observed, NormalizationMethod::NONE,
+                                   MatrixUnit::BP, 10000);
+
+    CHECK(sel.blockCacheHitRate() == 0.0);
+    CHECK(sel.blockCacheSize() == 0);
+
+    // Fill cache
+    sel.fetch(buffer);
+    CHECK(sel.blockCacheHitRate() == 0.0);
+
+    sel.fetch(buffer);
+    CHECK(sel.blockCacheHitRate() == 0.5);
+    CHECK(sel.blockCacheSize() == 6);
+
+    for (auto i = 0; i < 5; ++i) {
+        sel.fetch(buffer);
+    }
+    CHECK(sel.blockCacheHitRate() == 6.0 / 7.0);
+    CHECK(sel.blockCacheSize() == 6);
+
+    sel.clearBlockCache();
+    CHECK(sel.blockCacheHitRate() == 0);
+    CHECK(sel.blockCacheSize() == 0);
+}
+
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+TEST_CASE("MatrixSelector fetch (observed NONE BP 10000)") {
     std::vector<contactRecord> buffer;
     SECTION("v8") {
         SECTION("intra-chromosomal") {
@@ -250,7 +280,7 @@ TEST_CASE("matrixData fetch (observed NONE BP 10000)") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("matrixData fetch (observed VC BP 10000)") {
+TEST_CASE("MatrixSelector fetch (observed VC BP 10000)") {
     std::vector<contactRecord> buffer;
     SECTION("v8") {
         SECTION("intra-chromosomal") {
@@ -295,7 +325,7 @@ TEST_CASE("matrixData fetch (observed VC BP 10000)") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("matrixData fetch (expected NONE BP 10000)") {
+TEST_CASE("MatrixSelector fetch (expected NONE BP 10000)") {
     std::vector<contactRecord> buffer;
     SECTION("v8") {
         SECTION("intra-chromosomal") {
@@ -340,7 +370,7 @@ TEST_CASE("matrixData fetch (expected NONE BP 10000)") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("matrixData fetch (oe NONE BP 10000)") {
+TEST_CASE("MatrixSelector fetch (oe NONE BP 10000)") {
     std::vector<contactRecord> buffer;
     SECTION("v8") {
         SECTION("intra-chromosomal") {

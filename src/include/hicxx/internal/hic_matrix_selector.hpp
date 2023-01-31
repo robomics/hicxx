@@ -11,6 +11,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "hicxx/internal/cache.hpp"
 #include "hicxx/internal/common.hpp"
 #include "hicxx/internal/hic_file_stream.hpp"
 
@@ -29,13 +30,15 @@ class MatrixSelector {
     std::shared_ptr<HiCFileStream> _fs;
     std::shared_ptr<const HiCFooter> _footer;
     BlockMap _blockMap{};
+    BlockLRUCache _blockCache{};
     std::set<std::size_t> _blockNumberBuff{};
     std::vector<contactRecord> _contactRecordBuff{};
     BinaryBuffer _buffer{};
 
    public:
     MatrixSelector() = delete;
-    MatrixSelector(std::shared_ptr<HiCFileStream> fs, std::shared_ptr<const HiCFooter> footer);
+    MatrixSelector(std::shared_ptr<HiCFileStream> fs, std::shared_ptr<const HiCFooter> footer,
+                   std::size_t blockCacheCapacity);
 
     [[nodiscard]] const chromosome &chrom1() const noexcept;
     [[nodiscard]] const chromosome &chrom2() const noexcept;
@@ -74,6 +77,11 @@ class MatrixSelector {
     void fetch(std::int64_t start1, std::int64_t end1, std::int64_t start2, std::int64_t end2,
                std::vector<std::vector<float>> &buffer);
 
+    void clearBlockCache() noexcept;
+    [[nodiscard]] double blockCacheHitRate() const noexcept;
+    [[nodiscard]] std::size_t blockCacheSize() const noexcept;
+    [[nodiscard]] std::size_t blockCacheSizeBytes() const noexcept;
+
    private:
     [[nodiscard]] static BlockMap readBlockMap(HiCFileStream &fs, const HiCFooter &footer);
 
@@ -81,7 +89,8 @@ class MatrixSelector {
                           std::int64_t bin4, std::set<std::size_t> &buffer) const;
     void readBlockNumbersV9Intra(std::int64_t bin1, std::int64_t bin2, std::int64_t bin3,
                                  std::int64_t bin4, std::set<std::size_t> &buffer) const;
-    void readBlockOfInteractions(indexEntry idx, std::vector<contactRecord> &buffer);
+    [[nodiscard]] std::shared_ptr<InteractionBlock> readBlockOfInteractions(
+        indexEntry idx, std::vector<contactRecord> &buffer);
     void processInteraction(contactRecord &record);
     static void readBlockOfInteractionsV6(BinaryBuffer &src, std::vector<contactRecord> &dest);
 

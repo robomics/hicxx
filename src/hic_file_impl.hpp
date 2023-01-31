@@ -55,34 +55,43 @@ inline std::shared_ptr<const internal::HiCFooter> HiCFile::getFooter(
 inline internal::MatrixSelector HiCFile::getMatrixSelector(const chromosome& chrom,
                                                            MatrixType matrixType,
                                                            NormalizationMethod norm,
-                                                           MatrixUnit unit,
-                                                           std::int32_t resolution) {
-    return getMatrixSelector(chrom, chrom, matrixType, norm, unit, resolution);
+                                                           MatrixUnit unit, std::int32_t resolution,
+                                                           std::size_t blockCacheCapacity) {
+    return getMatrixSelector(chrom, chrom, matrixType, norm, unit, resolution, blockCacheCapacity);
 }
 inline internal::MatrixSelector HiCFile::getMatrixSelector(const std::string& chromName,
                                                            MatrixType matrixType,
                                                            NormalizationMethod norm,
-                                                           MatrixUnit unit,
-                                                           std::int32_t resolution) {
-    return getMatrixSelector(chromName, chromName, matrixType, norm, unit, resolution);
+                                                           MatrixUnit unit, std::int32_t resolution,
+                                                           std::size_t blockCacheCapacity) {
+    return getMatrixSelector(chromName, chromName, matrixType, norm, unit, resolution,
+                             blockCacheCapacity);
 }
 inline internal::MatrixSelector HiCFile::getMatrixSelector(std::int32_t chromId,
                                                            MatrixType matrixType,
                                                            NormalizationMethod norm,
-                                                           MatrixUnit unit,
-                                                           std::int32_t resolution) {
-    return getMatrixSelector(chromId, chromId, matrixType, norm, unit, resolution);
+                                                           MatrixUnit unit, std::int32_t resolution,
+                                                           std::size_t blockCacheCapacity) {
+    return getMatrixSelector(chromId, chromId, matrixType, norm, unit, resolution,
+                             blockCacheCapacity);
 }
 
-inline internal::MatrixSelector HiCFile::getMatrixSelector(
-    const chromosome& chrom1, const chromosome& chrom2, MatrixType matrixType,
-    NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution) {
-    return getMatrixSelector(chrom1.index, chrom2.index, matrixType, norm, unit, resolution);
+inline internal::MatrixSelector HiCFile::getMatrixSelector(const chromosome& chrom1,
+                                                           const chromosome& chrom2,
+                                                           MatrixType matrixType,
+                                                           NormalizationMethod norm,
+                                                           MatrixUnit unit, std::int32_t resolution,
+                                                           std::size_t blockCacheCapacity) {
+    return getMatrixSelector(chrom1.index, chrom2.index, matrixType, norm, unit, resolution,
+                             blockCacheCapacity);
 }
 
-inline internal::MatrixSelector HiCFile::getMatrixSelector(
-    const std::string& chromName1, const std::string& chromName2, MatrixType matrixType,
-    NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution) {
+inline internal::MatrixSelector HiCFile::getMatrixSelector(const std::string& chromName1,
+                                                           const std::string& chromName2,
+                                                           MatrixType matrixType,
+                                                           NormalizationMethod norm,
+                                                           MatrixUnit unit, std::int32_t resolution,
+                                                           std::size_t blockCacheCapacity) {
     const auto it1 = chromosomes().find(chromName1);
     if (it1 == chromosomes().end()) {
         throw std::runtime_error(
@@ -98,12 +107,13 @@ inline internal::MatrixSelector HiCFile::getMatrixSelector(
             fmt::format(FMT_STRING("unable to find chromosome named {}"), chromName2));
     }
 
-    return getMatrixSelector(it1->second, it2->second, matrixType, norm, unit, resolution);
+    return getMatrixSelector(it1->second, it2->second, matrixType, norm, unit, resolution,
+                             blockCacheCapacity);
 }
 
 inline internal::MatrixSelector HiCFile::getMatrixSelector(
     std::int32_t chromId1, std::int32_t chromId2, MatrixType matrixType, NormalizationMethod norm,
-    MatrixUnit unit, std::int32_t resolution) {
+    MatrixUnit unit, std::int32_t resolution, std::size_t blockCacheCapacity) {
     if (chromId1 >= std::int64_t(chromosomes().size())) {
         throw std::runtime_error(
             fmt::format(FMT_STRING("unable to find chromosome corresponding to ID {}"), chromId1));
@@ -132,7 +142,7 @@ inline internal::MatrixSelector HiCFile::getMatrixSelector(
     }
 
     return internal::MatrixSelector(
-        _fs, getFooter(chromId1, chromId2, matrixType, norm, unit, resolution));
+        _fs, getFooter(chromId1, chromId2, matrixType, norm, unit, resolution), blockCacheCapacity);
 }
 
 inline std::size_t HiCFile::numCachedFooters() const noexcept { return _footers.size(); }
