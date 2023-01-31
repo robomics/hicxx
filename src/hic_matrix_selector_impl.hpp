@@ -221,7 +221,7 @@ inline void MatrixZoomData::processInteraction(contactRecord &record) {
     const auto &c2Norm = _footer->c2Norm();
     const auto &expected = _footer->expectedValues();
 
-    if (record.bin1_start > record.bin2_start) {
+    if (isIntra() && record.bin1_start > record.bin2_start) {
         std::swap(record.bin1_start, record.bin2_start);
     }
 
@@ -231,6 +231,8 @@ inline void MatrixZoomData::processInteraction(contactRecord &record) {
     if (!skipNormalization) {
         const auto bin1 = static_cast<std::size_t>(record.bin1_start / resolution());
         const auto bin2 = static_cast<std::size_t>(record.bin2_start / resolution());
+        assert(bin1 < c1Norm.size());
+        assert(bin2 < c2Norm.size());
         record.count /= static_cast<float>(c1Norm[bin1] * c2Norm[bin2]);
     }
 
@@ -243,8 +245,8 @@ inline void MatrixZoomData::processInteraction(contactRecord &record) {
             return float(avgCount());
         }
 
-        const auto i = static_cast<std::size_t>(std::abs(record.bin1_start - record.bin2_start) /
-                                                resolution());
+        const auto i =
+            static_cast<std::size_t>((record.bin2_start - record.bin1_start) / resolution());
         assert(i < expected.size());
         return float(expected[i]);
     }();
