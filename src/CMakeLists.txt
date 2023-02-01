@@ -28,20 +28,39 @@ endif()
 if(HICXX_USE_ZLIBNG)
     set(ZLIB_ENABLE_TESTS OFF)
     set(WITH_GTEST OFF)
-    FetchContent_MakeAvailable(fmt tsl-ordered-map zlib-ng)
+    find_package(zlib-ng 2 QUIET)
+    if(NOT zlib-ng_FOUND)
+        FetchContent_MakeAvailable(zlib-ng)
+    endif()
 else()
     find_package(ZLIB REQUIRED)
-    FetchContent_MakeAvailable(fmt tsl-ordered-map)
 endif()
+
+
+find_package(fmt 9.1 QUIET)
+if (NOT fmt_FOUND)
+    FetchContent_MakeAvailable(fmt)
+endif()
+
+find_package(tsl-ordered-map 1.1 QUIET)
+if(NOT tsl-ordered-map_FOUND)
+    FetchContent_MakeAvailable(tsl-ordered-map)
+endif()
+
 
 target_sources(
     hicxx
-    INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/hic_file_impl.hpp
+    INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/cache_impl.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/file_stream_impl.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/hic_file_impl.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/hic_file_stream_impl.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/hic_footer_impl.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/hic_header_impl.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/hic_matrix_selector_impl.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/local_fstream_impl.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/remote_fstream_impl.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/include/hicxx/hicxx.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/include/hicxx/internal/cache.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/include/hicxx/internal/common.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/include/hicxx/internal/hic_footer.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/include/hicxx/internal/hic_matrix_selector.hpp
