@@ -265,7 +265,7 @@ inline void HiCFileStream::readBlockMap(std::int64_t fileOffset,
             for (std::int64_t j = 0; j < nBlocks; ++j) {
                 const auto key = _fs->read<std::int32_t>();
                 indexEntry index{_fs->read<std::int64_t>(), _fs->read<std::int32_t>()};
-                assert(index.position + index.size < static_cast<std::int32_t>(_fs->size()));
+                assert(index.position + index.size < static_cast<std::int64_t>(_fs->size()));
                 blockMap.emplace(key, std::move(index));
             }
             buffer.blockBinCount = blockBinCount;
