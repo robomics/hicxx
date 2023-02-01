@@ -12,6 +12,7 @@ examples/
 external/
 scratch/
 test/data
+venv/
 
 # Ignored files
 Dockerfile*
