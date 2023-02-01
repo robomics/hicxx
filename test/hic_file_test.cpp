@@ -126,7 +126,6 @@ TEST_CASE("HiCFile getMatrixSelector") {
         CHECK(sel.chrom1() == chrom1);
         CHECK(sel.chrom2() == chrom2);
 
-        sel = f.getMatrixSelector(chrom2, chrom1, mt, norm, unit, res);
         CHECK(sel.chrom1() == chrom1);
         CHECK(sel.chrom2() == chrom2);
     }
@@ -139,6 +138,7 @@ TEST_CASE("HiCFile getMatrixSelector") {
     }
 
     SECTION("malformed") {
+        CHECK_THROWS(f.getMatrixSelector(chrom2, chrom1, mt, norm, unit, res));  // NOLINT
         CHECK_THROWS(f.getMatrixSelector(chrom1, mt, norm, unit, 123));
         CHECK_THROWS(
             f.getMatrixSelector(chrom1, MatrixType::expected, NormalizationMethod::VC, unit, res));
