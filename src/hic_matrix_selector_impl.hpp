@@ -104,9 +104,9 @@ inline void MatrixSelector::fetch(std::int64_t start, std::int64_t end,
     return fetch(start, end, start, end, buffer, sorted);
 }
 
-inline void MatrixSelector::fetch(std::int64_t start1, std::int64_t end1, std::int64_t start2,
-                                  std::int64_t end2, std::vector<contactRecord> &buffer,
-                                  bool sorted) {
+inline void MatrixSelector::fetch(const std::int64_t start1, const std::int64_t end1,
+                                  const std::int64_t start2, const std::int64_t end2,
+                                  std::vector<contactRecord> &buffer, bool sorted) {
     buffer.clear();
     if (start1 > end1) {
         throw std::invalid_argument(
@@ -130,13 +130,9 @@ inline void MatrixSelector::fetch(std::int64_t start1, std::int64_t end1, std::i
     }
 
     const auto bin1 = start1 / resolution();
-    const auto bin2 = end1 / resolution();
+    const auto bin2 = (end1 + resolution() - 1) / resolution();
     const auto bin3 = start2 / resolution();
-    const auto bin4 = end2 / resolution();
-
-    // Properly deal with partial overlap with the first bin in either dimensions
-    start1 = bin1 * resolution();
-    start2 = bin3 * resolution();
+    const auto bin4 = (end2 + resolution() - 1) / resolution();
 
     if (_fs->version() > 8 && isIntra()) {
         readBlockNumbersV9Intra(bin1, bin2, bin3, bin4, _blockNumberBuff);
@@ -144,6 +140,7 @@ inline void MatrixSelector::fetch(std::int64_t start1, std::int64_t end1, std::i
         readBlockNumbers(bin1, bin2, bin3, bin4, _blockNumberBuff);
     }
 
+    const auto is_intra = isIntra();
     std::size_t empty_blocks = 0;
     for (auto blockNumber : _blockNumberBuff) {
         const auto block =
@@ -153,22 +150,18 @@ inline void MatrixSelector::fetch(std::int64_t start1, std::int64_t end1, std::i
             continue;
         }
 
-        for (auto record : *block) {
-            record.bin1_start *= resolution();
-            record.bin2_start *= resolution();
-
-            const auto pos1 = record.bin1_start;
-            const auto pos2 = record.bin2_start;
+        const auto last = block->end();
+        for (auto first = block->begin(); first != last; ++first) {
+            const auto b1 = first->bin1_start;
+            const auto b2 = first->bin2_start;
 
             // Obs we use open-closed interval instead of open-open like is done in straw
-            const auto overlapsInter =
-                pos1 >= start1 && pos1 < end1 && pos2 >= start2 && pos2 < end2;
-            const auto overlapsIntra =
-                isIntra() && (pos2 >= start1 && pos2 < end1 && pos1 >= start2 && pos1 < end2);
+            const auto overlapsUpper = b1 >= bin1 && b1 < bin2 && b2 >= bin3 && b2 < bin4;
+            const auto overlapsLower = b2 >= bin1 && b2 < bin2 && b1 >= bin3 && b1 < bin4;
 
-            if (overlapsInter || overlapsIntra) {
-                processInteraction(record);
-                if (!std::isnan(record.count) && !std::isinf(record.count)) {
+            if (overlapsUpper || (is_intra && overlapsLower)) {
+                auto record = processInteraction(*first);
+                if (std::isfinite(record.count)) {
                     buffer.emplace_back(std::move(record));
                 }
             }
@@ -180,7 +173,7 @@ inline void MatrixSelector::fetch(std::int64_t start1, std::int64_t end1, std::i
     }
 }
 
-inline void MatrixSelector::processInteraction(contactRecord &record) {
+inline contactRecord MatrixSelector::processInteraction(contactRecord record) {
     const auto &c1Norm = _footer->c1Norm();
     const auto &c2Norm = _footer->c2Norm();
     const auto &expected = _footer->expectedValues();
@@ -191,15 +184,18 @@ inline void MatrixSelector::processInteraction(contactRecord &record) {
         normalizationMethod() == NormalizationMethod::NONE || matrixType() == MatrixType::expected;
 
     if (!skipNormalization) {
-        const auto bin1 = static_cast<std::size_t>(record.bin1_start / resolution());
-        const auto bin2 = static_cast<std::size_t>(record.bin2_start / resolution());
+        const auto bin1 = static_cast<std::size_t>(record.bin1_start);
+        const auto bin2 = static_cast<std::size_t>(record.bin2_start);
         assert(bin1 < c1Norm.size());
         assert(bin2 < c2Norm.size());
         record.count /= static_cast<float>(c1Norm[bin1] * c2Norm[bin2]);
     }
 
+    record.bin1_start *= resolution();
+    record.bin2_start *= resolution();
+
     if (matrixType() == MatrixType::observed) {
-        return;
+        return record;
     }
 
     const auto expectedCount = [&]() {
@@ -215,11 +211,13 @@ inline void MatrixSelector::processInteraction(contactRecord &record) {
 
     if (matrixType() == MatrixType::expected) {
         record.count = expectedCount;
-        return;
+        return record;
     }
 
     assert(matrixType() == MatrixType::oe);
     record.count /= expectedCount;
+
+    return record;
 }
 
 inline void MatrixSelector::readBlockOfInteractionsV6(BinaryBuffer &src,
