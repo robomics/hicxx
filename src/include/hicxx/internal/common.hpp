@@ -5,11 +5,11 @@
 #pragma once
 
 #include <fmt/format.h>
+#include <tsl/ordered_map.h>
 
 #include <cassert>
 #include <cstdint>
 #include <functional>
-#include <map>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -84,7 +84,7 @@ struct std::hash<hicxx::chromosome> {
 
 namespace hicxx {
 
-using ChromosomeMap = std::map<std::string, chromosome>;
+using ChromosomeMap = tsl::ordered_map<std::string, chromosome>;
 
 enum class NormalizationMethod { NONE, VC, VC_SQRT, KR, SCALE };
 enum class MatrixType { observed, oe, expected };
