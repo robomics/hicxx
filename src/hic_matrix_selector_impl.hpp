@@ -105,6 +105,7 @@ inline void MatrixSelector::fetch(std::int64_t start, std::int64_t end,
 
 inline void MatrixSelector::fetch(std::int64_t start1, std::int64_t end1, std::int64_t start2,
                                   std::int64_t end2, std::vector<contactRecord> &buffer) {
+    buffer.clear();
     if (start1 > end1) {
         throw std::invalid_argument(
             fmt::format(FMT_STRING("start1 > end1: {} > {}"), start1, end1));
@@ -131,28 +132,33 @@ inline void MatrixSelector::fetch(std::int64_t start1, std::int64_t end1, std::i
     const auto bin3 = start2 / resolution();
     const auto bin4 = end2 / resolution();
 
+    // Properly deal with partial overlap with the first bin in either dimensions
+    start1 = bin1 * resolution();
+    start2 = bin3 * resolution();
+
     if (_fs->version() > 8 && isIntra()) {
         readBlockNumbersV9Intra(bin1, bin2, bin3, bin4, _blockNumberBuff);
     } else {
         readBlockNumbers(bin1, bin2, bin3, bin4, _blockNumberBuff);
     }
 
-    buffer.clear();
+    std::size_t empty_blocks = 0;
     for (auto blockNumber : _blockNumberBuff) {
         const auto block =
             readBlockOfInteractions(_blockMap.blocks[blockNumber], _contactRecordBuff);
         if (!block) {
+            empty_blocks++;
             continue;
         }
 
         for (auto record : *block) {
-            record.bin1_start *= std::int32_t(resolution());
-            record.bin2_start *= std::int32_t(resolution());
+            record.bin1_start *= resolution();
+            record.bin2_start *= resolution();
 
             const auto pos1 = record.bin1_start;
             const auto pos2 = record.bin2_start;
 
-            // Obs we use open-closed interval instead of open-open like is done in hicxx
+            // Obs we use open-closed interval instead of open-open like is done in straw
             const auto overlapsInter =
                 pos1 >= start1 && pos1 < end1 && pos2 >= start2 && pos2 < end2;
             const auto overlapsIntra =
@@ -166,61 +172,9 @@ inline void MatrixSelector::fetch(std::int64_t start1, std::int64_t end1, std::i
             }
         }
     }
-}
-
-inline void MatrixSelector::fetch(std::vector<std::vector<float>> &buffer) {
-    return fetch(0, chrom1().length, 0, chrom2().length, buffer);
-}
-
-inline void MatrixSelector::fetch(const std::string &coord,
-                                  std::vector<std::vector<float>> &buffer) {
-    return fetch(coord, coord, buffer);
-}
-
-inline void MatrixSelector::fetch(std::int64_t start, std::int64_t end,
-                                  std::vector<std::vector<float>> &buffer) {
-    return fetch(start, end, start, end, buffer);
-}
-
-inline void MatrixSelector::fetch(const std::string &coord1, const std::string &coord2,
-                                  std::vector<std::vector<float>> &buffer) {
-    const auto coord1_ = GenomicCoordinates::fromString(coord1, true);
-    const auto coord2_ = GenomicCoordinates::fromString(coord2, true);
-
-    return fetch(coord1_.start, coord1_.end, coord2_.start, coord2_.end, buffer);
-}
-
-inline void MatrixSelector::fetch(std::int64_t start1, std::int64_t end1, std::int64_t start2,
-                                  std::int64_t end2, std::vector<std::vector<float>> &buffer) {
-    const auto records = [&]() {
-        std::vector<contactRecord> records_;
-        fetch(start1, end1, start2, end2, records_);
-        return records_;
-    }();
-
-    // We resize the buffer here so that we let fetch() deal with invalid queries
-    const auto nRows = static_cast<std::size_t>((end1 - start1 + resolution() - 1) / resolution());
-    const auto nCols = static_cast<std::size_t>((end2 - start2 + resolution() - 1) / resolution());
-
-    buffer.resize(nRows);
-    for (auto &row : buffer) {
-        row.clear();
-        row.resize(nCols, 0.0F);
-    }
-
-    if (records.empty()) {
-        return;
-    }
-
-    const auto rowOffset = static_cast<std::size_t>(start1 / resolution());
-    const auto colOffset = static_cast<std::size_t>(start2 / resolution());
-    for (const auto &record : records) {
-        assert(std::size_t(record.bin2_start) >= rowOffset);
-        assert(std::size_t(record.bin1_start) >= colOffset);
-        const auto i = std::size_t(record.bin2_start) - rowOffset;
-        const auto j = std::size_t(record.bin1_start) - colOffset;
-
-        buffer[i][j] = record.count;
+    if (sorted && _blockNumberBuff.size() - empty_blocks > 1) {
+        // Only interactions from the same block are guaranteed to already be sorted
+        std::sort(buffer.begin(), buffer.end());
     }
 }
 
@@ -229,9 +183,7 @@ inline void MatrixSelector::processInteraction(contactRecord &record) {
     const auto &c2Norm = _footer->c2Norm();
     const auto &expected = _footer->expectedValues();
 
-    if (isIntra() && record.bin1_start > record.bin2_start) {
-        std::swap(record.bin1_start, record.bin2_start);
-    }
+    assert(isInter() || record.bin1_start <= record.bin2_start);
 
     const auto skipNormalization =
         normalizationMethod() == NormalizationMethod::NONE || matrixType() == MatrixType::expected;

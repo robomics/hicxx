@@ -35,8 +35,8 @@ struct indexEntry {
 
 // sparse matrixType entry
 struct contactRecord {
-    std::int32_t bin1_start{};
-    std::int32_t bin2_start{};
+    std::int64_t bin1_start{};
+    std::int64_t bin2_start{};
     float count{};
 
     constexpr bool operator<(const contactRecord &other) const noexcept {
