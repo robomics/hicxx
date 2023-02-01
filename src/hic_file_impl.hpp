@@ -38,7 +38,13 @@ inline const std::vector<std::int32_t>& HiCFile::resolutions() const noexcept {
 inline std::shared_ptr<const internal::HiCFooter> HiCFile::getFooter(
     std::int32_t chromId1, std::int32_t chromId2, MatrixType matrixType, NormalizationMethod norm,
     MatrixUnit unit, std::int32_t resolution) {
-    const internal::HiCFooterMetadata metadata{url(), matrixType, norm, unit, resolution};
+    const internal::HiCFooterMetadata metadata{url(),
+                                               matrixType,
+                                               norm,
+                                               unit,
+                                               resolution,
+                                               _fs->header().getChromosome(chromId1),
+                                               _fs->header().getChromosome(chromId2)};
     auto it = _footers.find(metadata);
     if (it != _footers.end()) {
         return it->second;
@@ -98,7 +104,8 @@ inline internal::MatrixSelector HiCFile::getMatrixSelector(const std::string& ch
             fmt::format(FMT_STRING("unable to find chromosome named {}"), chromName1));
     }
     if (chromName1 == chromName2) {
-        return getMatrixSelector(it1->second, it1->second, matrixType, norm, unit, resolution);
+        return getMatrixSelector(it1->second, it1->second, matrixType, norm, unit, resolution,
+                                 blockCacheCapacity);
     }
 
     const auto it2 = chromosomes().find(chromName2);

@@ -441,7 +441,7 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
                           wantedUnit,
                           wantedResolution,
                           _header->getChromosome(chromId1),
-                         _header->getChromosome(chromId2)}
+                          _header->getChromosome(chromId2)}
         };
     // clang-format on
 
@@ -575,16 +575,5 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
 
     return footer;
 }
-/*
-inline void HiCFileStream::removeCachedFooter(const HiCFooter &footer) {
-    auto it = this->_footers.find(footer);
-    if (it == this->_footers.end()) {
-        throw std::out_of_range("unable to find footer in cache");
-    }
-    this->_footers.erase(it);
-}
-
-inline void HiCFileStream::purgeFooterCache() { this->_footers.clear(); }
- */
 
 }  // namespace hicxx::internal
