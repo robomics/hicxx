@@ -97,8 +97,8 @@ TEST_CASE("readFooter (v8)", "[v8]") {
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);
         CHECK(f.fileOffset() == 11389664);
-        CHECK(f.c1Norm().size() == 4705);
-        CHECK(f.c2Norm().size() == 5064);
+        CHECK(f.c1Norm().size() == 4703);
+        CHECK(f.c2Norm().size() == 5058);
         CHECK(f.expectedValues().empty());
     }
 
@@ -111,8 +111,8 @@ TEST_CASE("readFooter (v8)", "[v8]") {
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);
         CHECK(f.fileOffset() == 11389664);
-        CHECK(f.c1Norm().size() == 4705);
-        CHECK(f.c2Norm().size() == 5064);
+        CHECK(f.c1Norm().size() == 4703);
+        CHECK(f.c2Norm().size() == 5058);
         CHECK(f.expectedValues().empty());
     }
 
@@ -125,8 +125,8 @@ TEST_CASE("readFooter (v8)", "[v8]") {
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);
         CHECK(f.fileOffset() == 11389664);
-        CHECK(f.c1Norm().size() == 4705);
-        CHECK(f.c2Norm().size() == 5064);
+        CHECK(f.c1Norm().size() == 4703);
+        CHECK(f.c2Norm().size() == 5058);
         CHECK(f.expectedValues().empty());
     }
 
@@ -139,8 +139,8 @@ TEST_CASE("readFooter (v8)", "[v8]") {
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);
         CHECK(f.fileOffset() == 11389664);
-        CHECK(f.c1Norm().size() == 4705);
-        CHECK(f.c2Norm().size() == 5064);
+        CHECK(f.c1Norm().size() == 4703);
+        CHECK(f.c2Norm().size() == 5058);
         CHECK(f.expectedValues().empty());
     }
 

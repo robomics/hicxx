@@ -77,7 +77,7 @@ class HiCFileStream {
     [[nodiscard]] std::vector<double> readNormalizationFactors(std::int32_t wantedChrom);
     void applyNormalizationFactors(std::vector<double> &expectedValues,
                                    const std::vector<double> &normFactors);
-    [[nodiscard]] std::vector<double> readNormalizationVector(indexEntry cNormEntry);
+    [[nodiscard]] std::vector<double> readNormalizationVector(indexEntry cNormEntry, std::size_t numValuesExpected);
 
     void discardExpectedVector(std::int64_t nValues);
     void discardNormalizationFactors(std::int32_t wantedChrom);

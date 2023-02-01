@@ -127,7 +127,8 @@ inline void HiCFileStream::applyNormalizationFactors(std::vector<double> &expect
                        [&](auto n) { return n / factor; });
     }
 }
-inline std::vector<double> HiCFileStream::readNormalizationVector(indexEntry cNormEntry) {
+inline std::vector<double> HiCFileStream::readNormalizationVector(indexEntry cNormEntry,
+                                                                  std::size_t numValuesExpected) {
     _fs->seekg(cNormEntry.position);
     const auto numValues = static_cast<std::size_t>(readNValues());
 
@@ -140,7 +141,18 @@ inline std::vector<double> HiCFileStream::readNormalizationVector(indexEntry cNo
 
     } else {
         _fs->read(buffer);
+        // Sometimes hic7 files have 2/4 extra trailing zeros for some reason
+        if (buffer.size() > numValuesExpected) {
+            buffer.resize(numValuesExpected);
+        }
     }
+
+    if (buffer.size() != numValuesExpected) {
+        throw std::runtime_error(fmt::format(
+            FMT_STRING("normalization vector is corrupted: expected {} values, found {}"),
+            numValuesExpected, buffer.size()));
+    }
+
     return buffer;
 }
 
@@ -555,14 +567,18 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
                                      : static_cast<std::int64_t>(_fs->read<std::int32_t>());
         if (foundChrom == chromId1 && foundNorm == wantedNorm && foundUnit == wantedUnit &&
             foundResolution == wantedResolution) {
+            const auto numBins = static_cast<std::size_t>(
+                (footer.chrom1().length + wantedResolution - 1) / wantedResolution);
             const auto currentPos = static_cast<std::int64_t>(this->_fs->tellg());
-            c1Norm = readNormalizationVector(indexEntry{filePosition, sizeInBytes});
+            c1Norm = readNormalizationVector(indexEntry{filePosition, sizeInBytes}, numBins);
             _fs->seekg(currentPos);
         }
         if (chromId1 != chromId2 && foundChrom == chromId2 && foundNorm == wantedNorm &&
             foundUnit == wantedUnit && foundResolution == wantedResolution) {
+            const auto numBins = static_cast<std::size_t>(
+                (footer.chrom2().length + wantedResolution - 1) / wantedResolution);
             const auto currentPos = static_cast<std::int64_t>(this->_fs->tellg());
-            c2Norm = readNormalizationVector(indexEntry{filePosition, sizeInBytes});
+            c2Norm = readNormalizationVector(indexEntry{filePosition, sizeInBytes}, numBins);
             _fs->seekg(currentPos);
         }
     }
