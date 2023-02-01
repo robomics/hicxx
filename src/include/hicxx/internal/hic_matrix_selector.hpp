@@ -59,23 +59,15 @@ class MatrixSelector {
 
     [[nodiscard]] inline double avgCount() const;
 
-    void fetch(std::vector<contactRecord> &buffer);
-    void fetch(const std::string &coord, std::vector<contactRecord> &buffer);
-    void fetch(std::int64_t start, std::int64_t end, std::vector<contactRecord> &buffer);
+    void fetch(std::vector<contactRecord> &buffer, bool sorted = false);
+    void fetch(const std::string &coord, std::vector<contactRecord> &buffer, bool sorted = false);
+    void fetch(std::int64_t start, std::int64_t end, std::vector<contactRecord> &buffer,
+               bool sorted = false);
 
     void fetch(const std::string &coord1, const std::string &coord2,
-               std::vector<contactRecord> &buffer);
+               std::vector<contactRecord> &buffer, bool sorted = false);
     void fetch(std::int64_t start1, std::int64_t end1, std::int64_t start2, std::int64_t end2,
-               std::vector<contactRecord> &buffer);
-
-    void fetch(std::vector<std::vector<float>> &buffer);
-    void fetch(const std::string &coord, std::vector<std::vector<float>> &buffer);
-    void fetch(std::int64_t start, std::int64_t end, std::vector<std::vector<float>> &buffer);
-
-    void fetch(const std::string &coord1, const std::string &coord2,
-               std::vector<std::vector<float>> &buffer);
-    void fetch(std::int64_t start1, std::int64_t end1, std::int64_t start2, std::int64_t end2,
-               std::vector<std::vector<float>> &buffer);
+               std::vector<contactRecord> &buffer, bool sorted = false);
 
     void clearBlockCache() noexcept;
     [[nodiscard]] double blockCacheHitRate() const noexcept;

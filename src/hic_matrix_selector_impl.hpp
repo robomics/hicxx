@@ -82,29 +82,31 @@ inline double MatrixSelector::avgCount() const {
         "MatrixSelector::avgCount is not implemented for intra-chromosomal matrices");
 }
 
-inline void MatrixSelector::fetch(std::vector<contactRecord> &buffer) {
-    return fetch(0, chrom1().length, 0, chrom2().length, buffer);
+inline void MatrixSelector::fetch(std::vector<contactRecord> &buffer, bool sorted) {
+    return fetch(0, chrom1().length, 0, chrom2().length, buffer, sorted);
 }
 
-inline void MatrixSelector::fetch(const std::string &coord, std::vector<contactRecord> &buffer) {
-    return fetch(coord, coord, buffer);
+inline void MatrixSelector::fetch(const std::string &coord, std::vector<contactRecord> &buffer,
+                                  bool sorted) {
+    return fetch(coord, coord, buffer, sorted);
 }
 
 inline void MatrixSelector::fetch(const std::string &coord1, const std::string &coord2,
-                                  std::vector<contactRecord> &buffer) {
+                                  std::vector<contactRecord> &buffer, bool sorted) {
     auto coord1_ = GenomicCoordinates::fromString(coord1, true);
     auto coord2_ = GenomicCoordinates::fromString(coord2, true);
 
-    return fetch(coord1_.start, coord1_.end, coord2_.start, coord2_.end, buffer);
+    return fetch(coord1_.start, coord1_.end, coord2_.start, coord2_.end, buffer, sorted);
 }
 
 inline void MatrixSelector::fetch(std::int64_t start, std::int64_t end,
-                                  std::vector<contactRecord> &buffer) {
-    return fetch(start, end, start, end, buffer);
+                                  std::vector<contactRecord> &buffer, bool sorted) {
+    return fetch(start, end, start, end, buffer, sorted);
 }
 
 inline void MatrixSelector::fetch(std::int64_t start1, std::int64_t end1, std::int64_t start2,
-                                  std::int64_t end2, std::vector<contactRecord> &buffer) {
+                                  std::int64_t end2, std::vector<contactRecord> &buffer,
+                                  bool sorted) {
     buffer.clear();
     if (start1 > end1) {
         throw std::invalid_argument(

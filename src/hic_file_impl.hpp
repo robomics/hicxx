@@ -131,7 +131,8 @@ inline internal::MatrixSelector HiCFile::getMatrixSelector(
     }
 
     if (chromId1 > chromId2) {
-        std::swap(chromId1, chromId2);
+        throw std::runtime_error(
+            "Query overlaps the lower-triangle of the matrix. This is currently not supported.");
     }
 
     if (matrixType == MatrixType::expected && norm != NormalizationMethod::NONE) {
