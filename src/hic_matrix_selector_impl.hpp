@@ -120,7 +120,7 @@ inline void MatrixSelector::fetch(std::int64_t start1, std::int64_t end1, std::i
             chrom1().name, start1, end1, chrom1().length));
     }
 
-    if (start2 < 0 || end2 > chrom1().length) {
+    if (start2 < 0 || end2 > chrom2().length) {
         throw std::runtime_error(fmt::format(
             FMT_STRING("query extends past chromosome {}: interval {}-{} lies outside of 0-{}"),
             chrom2().name, start2, end2, chrom2().length));
