@@ -104,9 +104,9 @@ inline void MatrixSelector::fetch(std::int64_t start, std::int64_t end,
     return fetch(start, end, start, end, buffer, sorted);
 }
 
-inline void MatrixSelector::fetch(const std::int64_t start1, const std::int64_t end1,
-                                  const std::int64_t start2, const std::int64_t end2,
-                                  std::vector<contactRecord> &buffer, bool sorted) {
+inline void MatrixSelector::fetch(std::int64_t start1, std::int64_t end1, std::int64_t start2,
+                                  std::int64_t end2, std::vector<contactRecord> &buffer,
+                                  bool sorted) {
     buffer.clear();
     if (start1 > end1) {
         throw std::invalid_argument(
@@ -129,6 +129,12 @@ inline void MatrixSelector::fetch(const std::int64_t start1, const std::int64_t 
             chrom2().name, start2, end2, chrom2().length));
     }
 
+    const auto is_intra = isIntra();
+    if (is_intra && start1 > start2) {
+        std::swap(start1, start2);
+        std::swap(end1, end2);
+    }
+
     const auto bin1 = start1 / resolution();
     const auto bin2 = (end1 + resolution() - 1) / resolution();
     const auto bin3 = start2 / resolution();
@@ -140,7 +146,6 @@ inline void MatrixSelector::fetch(const std::int64_t start1, const std::int64_t 
         readBlockNumbers(bin1, bin2, bin3, bin4, _blockNumberBuff);
     }
 
-    const auto is_intra = isIntra();
     std::size_t empty_blocks = 0;
     for (auto blockNumber : _blockNumberBuff) {
         const auto block =
@@ -156,10 +161,9 @@ inline void MatrixSelector::fetch(const std::int64_t start1, const std::int64_t 
             const auto b2 = first->bin2_start;
 
             // Obs we use open-closed interval instead of open-open like is done in straw
-            const auto overlapsUpper = b1 >= bin1 && b1 < bin2 && b2 >= bin3 && b2 < bin4;
-            const auto overlapsLower = b2 >= bin1 && b2 < bin2 && b1 >= bin3 && b1 < bin4;
+            const auto overlapsQuery = b1 >= bin1 && b1 < bin2 && b2 >= bin3 && b2 < bin4;
 
-            if (overlapsUpper || (is_intra && overlapsLower)) {
+            if (overlapsQuery) {
                 auto record = processInteraction(*first);
                 if (std::isfinite(record.count)) {
                     buffer.emplace_back(std::move(record));
