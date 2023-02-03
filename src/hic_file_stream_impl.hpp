@@ -301,23 +301,26 @@ inline bool HiCFileStream::checkMagicString() { return checkMagicString(*_fs); }
 // masterIndexPosition pointer
 inline HiCHeader HiCFileStream::readHeader(filestream::FileStream &fs) {
     if (!checkMagicString(fs)) {
-        throw std::runtime_error("Hi-C magic string is missing. " + fs.url() +
-                                 " does not appear to be a hic file");
+        throw std::runtime_error(fmt::format(
+            FMT_STRING("Hi-C magic string is missing. {} does not appear to be a hic file"),
+            fs.url()));
     }
 
     HiCHeader header{fs.url()};
 
     fs.read(header.version);
     if (header.version < 8) {
-        throw std::runtime_error("Version " + std::to_string(header.version) +
-                                 " no longer supported");
+        throw std::runtime_error(fmt::format(
+            FMT_STRING(".hic version 7 and older ar no longer supported. Found version {}"),
+            header.version));
     }
     fs.read(header.masterIndexOffset);
     if (header.masterIndexOffset < 0 ||
         header.masterIndexOffset >= static_cast<std::int64_t>(fs.size())) {
         throw std::runtime_error(
-            "Invalid masterOffset index offset. Expected offset between 0 and " +
-            std::to_string(fs.size()) + ", found " + std::to_string(header.masterIndexOffset));
+            fmt::format(FMT_STRING("file appears to be corrupted: expected master index offset to "
+                                   "be between 0 and {}, found {}"),
+                        fs.size(), header.masterIndexOffset));
     }
 
     fs.getline(header.genomeID, '\0');
@@ -477,7 +480,9 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
         }
     }
     if (metadata.fileOffset == -1) {
-        throw std::runtime_error("File doesn't have the given chr_chr map " + key);
+        throw std::runtime_error(fmt::format(
+            FMT_STRING("file does not have interactions for {}:{}: unable to read file offset"),
+            _header->getChromosome(chromId1).name, _header->getChromosome(chromId2).name));
     }
 
     if ((wantedMatrixType == MT::observed && wantedNorm == NM::NONE) ||
