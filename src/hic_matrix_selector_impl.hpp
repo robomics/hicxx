@@ -496,10 +496,16 @@ inline void MatrixSelector::readBlockNumbersV9Intra(std::int64_t bin1, std::int6
 }
 
 inline void MatrixSelector::clearBlockCache() noexcept { _blockCache.reset(); }
-inline double MatrixSelector::blockCacheHitRate() const noexcept { return _blockCache.hit_rate(); }
+constexpr double MatrixSelector::blockCacheHitRate() const noexcept {
+    return _blockCache.hit_rate();
+}
 inline std::size_t MatrixSelector::blockCacheSize() const noexcept { return _blockCache.size(); }
-inline std::size_t MatrixSelector::blockCacheSizeBytes() const noexcept {
+constexpr std::size_t MatrixSelector::blockCacheSizeBytes() const noexcept {
     return _blockCache.size_in_bytes();
+}
+constexpr std::size_t MatrixSelector::blockCacheHits() const noexcept { return _blockCache.hits(); }
+constexpr std::size_t MatrixSelector::blockCacheMisses() const noexcept {
+    return _blockCache.misses();
 }
 
 }  // namespace hicxx::internal

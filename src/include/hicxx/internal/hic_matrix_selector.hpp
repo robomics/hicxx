@@ -70,9 +70,11 @@ class MatrixSelector {
                std::vector<contactRecord> &buffer, bool sorted = false);
 
     void clearBlockCache() noexcept;
-    [[nodiscard]] double blockCacheHitRate() const noexcept;
+    [[nodiscard]] constexpr double blockCacheHitRate() const noexcept;
     [[nodiscard]] std::size_t blockCacheSize() const noexcept;
-    [[nodiscard]] std::size_t blockCacheSizeBytes() const noexcept;
+    [[nodiscard]] constexpr std::size_t blockCacheSizeBytes() const noexcept;
+    [[nodiscard]] constexpr std::size_t blockCacheHits() const noexcept;
+    [[nodiscard]] constexpr std::size_t blockCacheMisses() const noexcept;
 
    private:
     [[nodiscard]] static BlockMap readBlockMap(HiCFileStream &fs, const HiCFooter &footer);

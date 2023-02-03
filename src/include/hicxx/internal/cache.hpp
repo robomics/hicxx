@@ -58,8 +58,8 @@ class BlockLRUCache {
     explicit BlockLRUCache(std::size_t max_size_in_bytes);
 
     [[nodiscard]] std::size_t size() const noexcept;
-    [[nodiscard]] std::size_t size_in_bytes() const noexcept;
-    [[nodiscard]] std::size_t max_size_in_bytes() const noexcept;
+    [[nodiscard]] constexpr std::size_t size_in_bytes() const noexcept;
+    [[nodiscard]] constexpr std::size_t max_size_in_bytes() const noexcept;
     void reset() noexcept;
 
     [[nodiscard]] auto begin() noexcept -> iterator;
@@ -75,7 +75,9 @@ class BlockLRUCache {
     auto emplace(key_t key, mapped_type&& block) -> std::pair<iterator, bool>;
     auto emplace(key_t key, InteractionBlock&& block) -> std::pair<iterator, bool>;
 
-    [[nodiscard]] double hit_rate() const noexcept;
+    [[nodiscard]] constexpr double hit_rate() const noexcept;
+    [[nodiscard]] constexpr std::size_t hits() const noexcept;
+    [[nodiscard]] constexpr std::size_t misses() const noexcept;
 
    private:
     void erase(key_t key);

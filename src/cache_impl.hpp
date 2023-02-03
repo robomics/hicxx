@@ -45,8 +45,8 @@ inline BlockLRUCache::BlockLRUCache(std::size_t max_size_in_bytes)
     }
 }
 
-inline std::size_t BlockLRUCache::size_in_bytes() const noexcept { return _current_size_bytes; }
-inline std::size_t BlockLRUCache::max_size_in_bytes() const noexcept { return _max_size_bytes; }
+constexpr std::size_t BlockLRUCache::size_in_bytes() const noexcept { return _current_size_bytes; }
+constexpr std::size_t BlockLRUCache::max_size_in_bytes() const noexcept { return _max_size_bytes; }
 
 inline void BlockLRUCache::reset() noexcept {
     _cache.clear();
@@ -107,12 +107,16 @@ inline auto BlockLRUCache::emplace(key_t key, InteractionBlock &&block)
     return emplace(key, std::make_shared<InteractionBlock>(std::move(block)));
 }
 
-inline double BlockLRUCache::hit_rate() const noexcept {
+constexpr double BlockLRUCache::hit_rate() const noexcept {
     if (_hits + _misses == 0) {
         return 0.0;
     }
     return double(_hits) / double(_hits + _misses);
 }
+
+constexpr std::size_t BlockLRUCache::hits() const noexcept { return _hits; }
+
+constexpr std::size_t BlockLRUCache::misses() const noexcept { return _misses; }
 
 inline std::size_t BlockLRUCache::size() const noexcept { return _cache.size(); }
 
