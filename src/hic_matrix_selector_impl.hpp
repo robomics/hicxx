@@ -409,7 +409,7 @@ inline void MatrixSelector::readBlockOfInteractionsType2(
     constexpr auto i16Counts = std::is_same<i16, CountType>::value;
 
     auto isValid = [&](CountType n) {
-        return (i16Counts && static_cast<i16>(n) != i16Sentinel) &&
+        return (i16Counts && static_cast<i16>(n) != i16Sentinel) ||
                (!i16Counts && !std::isnan(static_cast<f32>(n)));
     };
 

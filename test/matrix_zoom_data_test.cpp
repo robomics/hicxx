@@ -215,6 +215,17 @@ TEST_CASE("MatrixSelector fetch (observed NONE BP 10000)") {
             compareContactRecord(buffer[expected_value.first], expected_value.second);
         }
 
+        SECTION("cover type 2 interactions") {
+            HiCFile(pathV8)
+                .getMatrixSelector("chr2L", "chr2R", MatrixType::observed, NormalizationMethod::NONE,
+                                   MatrixUnit::BP, 2500000)
+                .fetch(buffer, true);
+            REQUIRE(buffer.size() == 110);
+            CHECK(sumCounts<std::int32_t>(buffer) == 1483112);
+
+            compareContactRecord(buffer[53], contactRecord{7500000, 12500000, 16512});
+        }
+
         SECTION("sub-queries") {
             SECTION("single pixel") {
                 HiCFile(pathV9)
