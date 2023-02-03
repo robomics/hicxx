@@ -308,7 +308,7 @@ inline HiCHeader HiCFileStream::readHeader(filestream::FileStream &fs) {
     HiCHeader header{fs.url()};
 
     fs.read(header.version);
-    if (header.version < 6) {
+    if (header.version < 8) {
         throw std::runtime_error("Version " + std::to_string(header.version) +
                                  " no longer supported");
     }

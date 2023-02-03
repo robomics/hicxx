@@ -84,7 +84,7 @@ class MatrixSelector {
     [[nodiscard]] std::shared_ptr<InteractionBlock> readBlockOfInteractions(
         indexEntry idx, std::vector<contactRecord> &buffer);
     [[nodiscard]] contactRecord processInteraction(contactRecord record);
-    static void readBlockOfInteractionsV6(BinaryBuffer &src, std::vector<contactRecord> &dest);
+    // static void readBlockOfInteractionsV6(BinaryBuffer &src, std::vector<contactRecord> &dest);
 
     static void readBlockOfInteractionsType1Dispatcher(bool i16Bin1, bool i16Bin2, bool i16Counts,
                                                        std::int32_t bin1Offset,

@@ -224,6 +224,7 @@ inline contactRecord MatrixSelector::processInteraction(contactRecord record) {
     return record;
 }
 
+/*
 inline void MatrixSelector::readBlockOfInteractionsV6(BinaryBuffer &src,
                                                       std::vector<contactRecord> &dest) {
     assert(src.i == sizeof(std::int32_t));
@@ -248,6 +249,7 @@ inline void MatrixSelector::readBlockOfInteractionsV6(BinaryBuffer &src,
     });
     return;
 }
+*/
 
 inline std::shared_ptr<InteractionBlock> MatrixSelector::readBlockOfInteractions(
     indexEntry idx, std::vector<contactRecord> &buffer) {
@@ -267,12 +269,12 @@ inline std::shared_ptr<InteractionBlock> MatrixSelector::readBlockOfInteractions
     const auto nRecords = static_cast<std::size_t>(_buffer.read<std::int32_t>());
     buffer.resize(nRecords);
 
-    if (_fs->version() == 6) {
-        readBlockOfInteractionsV6(_buffer, buffer);
-        auto it =
-            _blockCache.emplace(static_cast<std::size_t>(idx.position), InteractionBlock(buffer));
-        return it.first->second;
-    }
+    // if (_fs->version() == 6) {
+    //     readBlockOfInteractionsV6(_buffer, buffer);
+    //     auto it =
+    //         _blockCache.emplace(static_cast<std::size_t>(idx.position), InteractionBlock(buffer));
+    //     return it.first->second;
+    // }
 
     const auto bin1Offset = _buffer.read<std::int32_t>();
     const auto bin2Offset = _buffer.read<std::int32_t>();
