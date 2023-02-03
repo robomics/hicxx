@@ -132,25 +132,23 @@ inline std::vector<double> HiCFileStream::readNormalizationVector(indexEntry cNo
     _fs->seekg(cNormEntry.position);
     const auto numValues = static_cast<std::size_t>(readNValues());
 
-    std::vector<double> buffer(numValues);
+    // We cannot use numValues directly because sometimes hic files have few trailing zeros for some
+    // reason
+    if (numValues < numValuesExpected) {
+        throw std::runtime_error(fmt::format(
+            FMT_STRING("normalization vector is corrupted: expected {} values, found {}"),
+            numValuesExpected, numValues));
+    }
+
+    std::vector<double> buffer(numValuesExpected);
     if (version() > 8) {
-        std::vector<float> tmpbuffer(numValues);
+        std::vector<float> tmpbuffer(numValuesExpected);
         _fs->read(tmpbuffer);
         std::transform(tmpbuffer.begin(), tmpbuffer.end(), buffer.begin(),
                        [](float n) { return static_cast<double>(n); });
 
     } else {
         _fs->read(buffer);
-        // Sometimes hic7 files have 2/4 extra trailing zeros for some reason
-        if (buffer.size() > numValuesExpected) {
-            buffer.resize(numValuesExpected);
-        }
-    }
-
-    if (buffer.size() != numValuesExpected) {
-        throw std::runtime_error(fmt::format(
-            FMT_STRING("normalization vector is corrupted: expected {} values, found {}"),
-            numValuesExpected, buffer.size()));
     }
 
     return buffer;

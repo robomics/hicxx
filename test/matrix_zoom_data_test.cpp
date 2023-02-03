@@ -217,8 +217,8 @@ TEST_CASE("MatrixSelector fetch (observed NONE BP 10000)") {
 
         SECTION("cover type 2 interactions") {
             HiCFile(pathV8)
-                .getMatrixSelector("chr2L", "chr2R", MatrixType::observed, NormalizationMethod::NONE,
-                                   MatrixUnit::BP, 2500000)
+                .getMatrixSelector("chr2L", "chr2R", MatrixType::observed,
+                                   NormalizationMethod::NONE, MatrixUnit::BP, 2500000)
                 .fetch(buffer, true);
             REQUIRE(buffer.size() == 110);
             CHECK(sumCounts<std::int32_t>(buffer) == 1483112);

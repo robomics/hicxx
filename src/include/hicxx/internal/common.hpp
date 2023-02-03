@@ -86,7 +86,18 @@ namespace hicxx {
 
 using ChromosomeMap = tsl::ordered_map<std::string, chromosome>;
 
-enum class NormalizationMethod { NONE, VC, VC_SQRT, KR, SCALE };
+enum class NormalizationMethod {
+    NONE,
+    VC,
+    VC_SQRT,
+    KR,
+    SCALE,
+    INTER_VC,
+    INTER_SCALE,
+    GW_VC,
+    GW_KR,
+    GW_SCALE
+};
 enum class MatrixType { observed, oe, expected };
 enum class MatrixUnit { BP, FRAG };
 
@@ -108,6 +119,26 @@ enum class MatrixUnit { BP, FRAG };
 
     if (s == "SCALE") {
         return NormalizationMethod::SCALE;
+    }
+
+    if (s == "INTER_VC") {
+        return NormalizationMethod::INTER_VC;
+    }
+
+    if (s == "INTER_SCALE") {
+        return NormalizationMethod::INTER_SCALE;
+    }
+
+    if (s == "GW_VC") {
+        return NormalizationMethod::GW_VC;
+    }
+
+    if (s == "GW_KR") {
+        return NormalizationMethod::GW_KR;
+    }
+
+    if (s == "GW_SCALE") {
+        return NormalizationMethod::GW_SCALE;
     }
 
     throw std::runtime_error("Invalid normalization \"" + s + "\"");
@@ -193,6 +224,16 @@ struct fmt::formatter<hicxx::NormalizationMethod> {
                 return fmt::format_to(ctx.out(), FMT_STRING("KR"));
             case hicxx::NormalizationMethod::SCALE:
                 return fmt::format_to(ctx.out(), FMT_STRING("SCALE"));
+            case ::hicxx::NormalizationMethod::INTER_VC:
+                return fmt::format_to(ctx.out(), FMT_STRING("INTER_VC"));
+            case ::hicxx::NormalizationMethod::INTER_SCALE:
+                return fmt::format_to(ctx.out(), FMT_STRING("INTER_SCALE"));
+            case ::hicxx::NormalizationMethod::GW_VC:
+                return fmt::format_to(ctx.out(), FMT_STRING("GW_VC"));
+            case ::hicxx::NormalizationMethod::GW_KR:
+                return fmt::format_to(ctx.out(), FMT_STRING("GW_KR"));
+            case ::hicxx::NormalizationMethod::GW_SCALE:
+                return fmt::format_to(ctx.out(), FMT_STRING("GW_SCALE"));
         }
         assert(false);
         std::abort();

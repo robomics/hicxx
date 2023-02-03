@@ -272,7 +272,8 @@ inline std::shared_ptr<InteractionBlock> MatrixSelector::readBlockOfInteractions
     // if (_fs->version() == 6) {
     //     readBlockOfInteractionsV6(_buffer, buffer);
     //     auto it =
-    //         _blockCache.emplace(static_cast<std::size_t>(idx.position), InteractionBlock(buffer));
+    //         _blockCache.emplace(static_cast<std::size_t>(idx.position),
+    //         InteractionBlock(buffer));
     //     return it.first->second;
     // }
 
