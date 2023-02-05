@@ -479,8 +479,10 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
     }
     if (metadata.fileOffset == -1) {
         throw std::runtime_error(fmt::format(
-            FMT_STRING("file does not have interactions for {}:{}: unable to read file offset"),
-            _header->getChromosome(chromId1).name, _header->getChromosome(chromId2).name));
+            FMT_STRING(
+                "unable to find interactions for {}:{} at {} ({}): unable to read file offset"),
+            _header->getChromosome(chromId1).name, _header->getChromosome(chromId2).name,
+            wantedResolution, wantedUnit));
     }
 
     if ((wantedMatrixType == MT::observed && wantedNorm == NM::NONE) ||
@@ -516,10 +518,10 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
     if (chromId1 == chromId2 && (wantedMatrixType == MT::oe || wantedMatrixType == MT::expected) &&
         wantedNorm == NM::NONE) {
         if (expectedValues.empty()) {
-            throw std::runtime_error(fmt::format(
-                FMT_STRING(
-                    "File did not contain expected values vectors for unit {} at resolution {}"),
-                wantedUnit, wantedResolution));
+            throw std::runtime_error(
+                fmt::format(FMT_STRING("unable to find expected values for {}:{} at {} ({})"),
+                            _header->getChromosome(chromId1).name,
+                            _header->getChromosome(chromId2).name, wantedResolution, wantedUnit));
         }
         return footer;
     }
@@ -551,8 +553,9 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
         if (expectedValues.empty()) {
             throw std::runtime_error(fmt::format(
                 FMT_STRING(
-                    "File did not contain normalized expected values for unit {} at resolution {}"),
-                wantedUnit, wantedResolution));
+                    "unable to find expected values normalization factors for {}:{} at {} ({})"),
+                _header->getChromosome(chromId1).name, _header->getChromosome(chromId2).name,
+                wantedResolution, wantedUnit));
         }
     }
 
@@ -585,11 +588,19 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
             _fs->seekg(currentPos);
         }
     }
-    if (footer.c1Norm().empty() || footer.c2Norm().empty()) {
+
+    if (footer.c1Norm().empty() && footer.c2Norm().empty()) {
         throw std::runtime_error(
-            fmt::format(FMT_STRING("File did not contain {} normalization vectors for one or both "
-                                   "chromosomes at resolution {} and unit {}"),
-                        wantedNorm, wantedResolution, wantedUnit));
+            fmt::format(FMT_STRING("unable to find {} normalization vectors for {}:{} at {} ({})"),
+                        wantedNorm, _header->getChromosome(chromId1).name,
+                        _header->getChromosome(chromId2).name, wantedResolution, wantedUnit));
+    }
+
+    if (footer.c1Norm().empty() || footer.c2Norm().empty()) {
+        const auto chromId = footer.c1Norm().empty() ? chromId1 : chromId2;
+        throw std::runtime_error(fmt::format(
+            FMT_STRING("unable to find {} normalization vector for {} at {} ({})"), wantedNorm,
+            _header->getChromosome(chromId).name, wantedResolution, wantedUnit));
     }
 
     return footer;
