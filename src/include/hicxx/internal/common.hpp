@@ -93,6 +93,7 @@ enum class NormalizationMethod {
     KR,
     SCALE,
     INTER_VC,
+    INTER_KR,
     INTER_SCALE,
     GW_VC,
     GW_KR,
@@ -123,6 +124,10 @@ enum class MatrixUnit { BP, FRAG };
 
     if (s == "INTER_VC") {
         return NormalizationMethod::INTER_VC;
+    }
+
+    if (s == "INTER_KR") {
+        return NormalizationMethod::INTER_KR;
     }
 
     if (s == "INTER_SCALE") {
@@ -224,15 +229,17 @@ struct fmt::formatter<hicxx::NormalizationMethod> {
                 return fmt::format_to(ctx.out(), FMT_STRING("KR"));
             case hicxx::NormalizationMethod::SCALE:
                 return fmt::format_to(ctx.out(), FMT_STRING("SCALE"));
-            case ::hicxx::NormalizationMethod::INTER_VC:
+            case hicxx::NormalizationMethod::INTER_VC:
                 return fmt::format_to(ctx.out(), FMT_STRING("INTER_VC"));
-            case ::hicxx::NormalizationMethod::INTER_SCALE:
+            case hicxx::NormalizationMethod::INTER_KR:
+                return fmt::format_to(ctx.out(), FMT_STRING("INTER_KR"));
+            case hicxx::NormalizationMethod::INTER_SCALE:
                 return fmt::format_to(ctx.out(), FMT_STRING("INTER_SCALE"));
-            case ::hicxx::NormalizationMethod::GW_VC:
+            case hicxx::NormalizationMethod::GW_VC:
                 return fmt::format_to(ctx.out(), FMT_STRING("GW_VC"));
-            case ::hicxx::NormalizationMethod::GW_KR:
+            case hicxx::NormalizationMethod::GW_KR:
                 return fmt::format_to(ctx.out(), FMT_STRING("GW_KR"));
-            case ::hicxx::NormalizationMethod::GW_SCALE:
+            case hicxx::NormalizationMethod::GW_SCALE:
                 return fmt::format_to(ctx.out(), FMT_STRING("GW_SCALE"));
         }
         assert(false);
