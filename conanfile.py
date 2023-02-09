@@ -23,13 +23,10 @@ class Hicxx(ConanFile):
     generators = "cmake", "cmake_find_package", "cmake_find_package_multi"
 
     def validate(self):
-        if self.settings.compiler.get_safe("cppstd"):
+        if self.settings.compiler.get_safe("compiler.cppstd"):
             check_min_cppstd(self, 17)
 
     def configure(self):
-        if self.settings.compiler in ["clang", "gcc"]:
-            self.settings.compiler.libcxx = "libstdc++11"
-
         self.options["fmt"].header_only = True
 
     def imports(self):

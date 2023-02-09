@@ -156,8 +156,10 @@ jobs:
         run: |
           mkdir build
           cd build
-          conan install ..        \
-            --build=outdated      \
+          conan install ..                 \
+            --build=outdated               \
+            -s compiler.cppstd=17          \
+            -s compiler.libcxx=libstdc++11 \
             -s build_type=${{ matrix.build_type }}
 
       - name: Clean Conan cache (post-build)
@@ -189,7 +191,7 @@ jobs:
                 --schedule-random   \
                 --output-on-failure \
                 --no-tests=error    \
-                --timeout 240       \
+                --timeout 30        \
                 -j $(nproc)
 
   ubuntu-ci-status-check:

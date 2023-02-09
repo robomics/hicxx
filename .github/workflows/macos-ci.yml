@@ -118,6 +118,7 @@ jobs:
           cd build
           conan install ..        \
             --build=outdated      \
+            -s compiler.cppstd=17 \
             -s build_type=${{ matrix.build_type }}
 
       - name: Clean Conan cache (post-build)
@@ -147,7 +148,7 @@ jobs:
                 --schedule-random   \
                 --output-on-failure \
                 --no-tests=error    \
-                --timeout 180
+                --timeout 30
 
 
   macos-ci-status-check:
