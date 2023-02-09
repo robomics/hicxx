@@ -43,6 +43,7 @@ if(HICXX_BUILD_EXAMPLES)
 endif()
 
 if(HICXX_ENABLE_TESTING)
+    include(cmake/FetchTestDatasets.cmake)
     enable_testing()
     add_subdirectory(test)
 endif()
