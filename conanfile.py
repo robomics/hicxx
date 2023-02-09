@@ -26,5 +26,11 @@ class Hicxx(ConanFile):
         if self.settings.compiler.get_safe("cppstd"):
             check_min_cppstd(self, 17)
 
+    def configure(self):
+        if self.settings.compiler in ["clang", "gcc"]:
+            self.settings.compiler.libcxx = "libstdc++11"
+
+        self.options["fmt"].header_only = True
+
     def imports(self):
         self.copy("license*", dst="licenses", folder=True, ignore_case=True)

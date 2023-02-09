@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Roberto Rossini (roberros@uio.no)
+# Copyright (C) 2023 Roberto Rossini (roberros@uio.no)
 # SPDX-License-Identifier: MIT
 
 name: MacOS CI
@@ -103,12 +103,7 @@ jobs:
         run: |
           conan profile new "$CONAN_USER_HOME/profiles/default" --detect --force
           conan config init
-          conan profile update settings.compiler=${{ matrix.compiler }} default
-          conan profile update settings.compiler.version=${{ matrix.compiler-version }} default
           conan profile update settings.compiler.cppstd=17 default
-          # Add apple-clang 14.0 to settings.yml
-          sed -i.bak 's/"10.0", "11.0", "12.0", "13", "13.0", "13.1"\]/"10.0", "11.0", "12.0", "13", "13.0", "13.1", "14.0"\]/' \
-            "$CONAN_USER_HOME/.conan/settings.yml"
 
       - name: Clean Conan cache (pre-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
@@ -117,13 +112,13 @@ jobs:
           conan remove -f "*" --src
           conan remove -f "*" --system-reqs
 
-      - name: Configure project
+      - name: Install build dependencies
         run: |
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -DHICXX_ENABLE_TESTING=ON                   \
-                -DHICXX_BUILD_EXAMPLES=ON                   \
-                -S "${{ github.workspace }}"                \
-                -B "${{ github.workspace }}/build"
+          mkdir build
+          cd build
+          conan install ..        \
+            --build=outdated      \
+            -s build_type=${{ matrix.build_type }}
 
       - name: Clean Conan cache (post-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
@@ -132,6 +127,15 @@ jobs:
           conan remove -f "*" --src
           conan remove -f "*" --system-reqs
           conan remove -f "*" --outdated
+
+      - name: Configure project
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                -DHICXX_ENABLE_TESTING=ON                   \
+                -DHICXX_BUILD_EXAMPLES=ON                   \
+                -S "${{ github.workspace }}"                \
+                -B "${{ github.workspace }}/build"          \
+                -DCMAKE_MODULE_PATH="${{ github.workspace }}/build/"
 
       - name: Build project
         run: cmake --build ${{ github.workspace }}/build
@@ -143,8 +147,7 @@ jobs:
                 --schedule-random   \
                 --output-on-failure \
                 --no-tests=error    \
-                --timeout 180       \
-                -E '.*LONG.*'
+                --timeout 180
 
 
   macos-ci-status-check:

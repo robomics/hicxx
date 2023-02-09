@@ -152,15 +152,13 @@ jobs:
           conan remove -f "*" --src
           conan remove -f "*" --system-reqs
 
-      - name: Configure project
+      - name: Install build dependencies
         run: |
-          git config --global --add safe.directory ${{ github.workspace }}
-          
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -DHICXX_ENABLE_TESTING=ON                   \
-                -DHICXX_BUILD_EXAMPLES=ON                   \
-                -S "${{ github.workspace }}"                \
-                -B "${{ github.workspace }}/build"
+          mkdir build
+          cd build
+          conan install ..        \
+            --build=outdated      \
+            -s build_type=${{ matrix.build_type }}
 
       - name: Clean Conan cache (post-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
@@ -170,6 +168,16 @@ jobs:
           conan remove -f "*" --system-reqs
           conan remove -f "*" --outdated
 
+      - name: Configure project
+        run: |
+          git config --global --add safe.directory ${{ github.workspace }}
+
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                -DHICXX_ENABLE_TESTING=ON                   \
+                -DHICXX_BUILD_EXAMPLES=ON                   \
+                -S "${{ github.workspace }}"                \
+                -B "${{ github.workspace }}/build"          \
+                -DCMAKE_MODULE_PATH="${{ github.workspace }}/build/"
 
       - name: Build project
         run: cmake --build ${{ github.workspace }}/build -j $(nproc)
