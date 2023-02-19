@@ -2,9 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-set(SOURCE_FILES examples/main.cpp src/hicxx.cpp)
-add_executable(hicxx_example example.cpp)
+add_executable(hicxx_dump hicxx_dump.cpp)
 target_link_libraries(
-    hicxx_example
+    hicxx_dump
     PRIVATE hicxx_project_options
     PUBLIC hicxx)

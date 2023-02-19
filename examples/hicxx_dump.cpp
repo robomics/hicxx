@@ -61,10 +61,15 @@ int main(int argc, char** argv) noexcept {
         selector.fetch(coord1.start, coord1.end, coord2.start, coord2.end, buffer);
         std::sort(buffer.begin(), buffer.end());
 
+        const auto chrom1_size = selector.chrom1().length;
+        const auto chrom2_size = selector.chrom2().length;
         for (const auto& record : buffer) {
             const auto start1 = record.bin1_start;
             const auto start2 = record.bin2_start;
-            fmt::print(FMT_COMPILE("{}\t{}\t{}\n"), start1, start2, record.count);
+            const auto end1 = (std::min)(start1 + resolution, chrom1_size);
+            const auto end2 = (std::min)(start2 + resolution, chrom2_size);
+            fmt::print(FMT_COMPILE("{}\t{}\t{}\t{}\t{}\t{}\t{}\n"), coord1.chrom, start1, end1,
+                       coord2.chrom, start2, end2, record.count);
         }
     } catch (const std::exception& e) {
         const auto* url = argc == 8 ? *(argv + 3) : *(argv + 2);
