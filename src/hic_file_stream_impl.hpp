@@ -361,16 +361,15 @@ inline HiCHeader HiCFileStream::readHeader(filestream::FileStream &fs) {
 
     // Read resolutions
     const auto numResolutions = static_cast<std::size_t>(fs.read<std::int32_t>());
+    if (numResolutions == 0) {
+        throw std::runtime_error("unable to read the list of available resolutions");
+    }
     header.resolutions.resize(numResolutions);
     std::generate(header.resolutions.begin(), header.resolutions.end(), [&]() {
         const auto res = fs.read<std::int32_t>();
         assert(res > 0);
         return res;
     });
-
-    if (header.resolutions.empty()) {
-        throw std::runtime_error("unable to read the list of available resolutions");
-    }
 
     return header;
 }
