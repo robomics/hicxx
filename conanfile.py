@@ -15,7 +15,7 @@ class Hicxx(ConanFile):
     license = "MIT"
     author = "Roberto Rossini (roberros@uio.no)"
     settings = "os", "compiler", "build_type", "arch"
-    requires = ["catch2/3.3.1",
+    requires = ["catch2/3.3.2",
                 "fmt/9.1.0",
                 "tsl-ordered-map/1.1.0",
                 "zlib/1.2.13"]
