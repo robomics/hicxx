@@ -51,9 +51,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { compiler: clang, os: 'macos-11',    conan-ver: '1.58.*', cmake-ver: '3.25.*', build_type: Release }
-          - { compiler: clang, os: 'macos-12',    conan-ver: '1.58.*', cmake-ver: '3.25.*', build_type: Release }
-          - { compiler: clang, os: 'macos-12',    conan-ver: '1.58.*', cmake-ver: '3.25.*', build_type: Debug   }
+          - { compiler: clang, os: 'macos-11',    conan-ver: '1.59.*', cmake-ver: '3.26.*', build_type: Release }
+          - { compiler: clang, os: 'macos-12',    conan-ver: '1.59.*', cmake-ver: '3.26.*', build_type: Release }
+          - { compiler: clang, os: 'macos-12',    conan-ver: '1.59.*', cmake-ver: '3.26.*', build_type: Debug   }
 
     steps:
       - uses: actions/checkout@v3

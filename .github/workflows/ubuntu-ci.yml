@@ -120,14 +120,14 @@ jobs:
       matrix: ${{ fromJSON(needs.matrix-factory.outputs.matrix) }}
 
     container:
-      image: ${{ matrix.image }}:latest
+      image: ${{ matrix.image }}:1.59.0
       options: "-v ${{ github.workspace }}:${{ github.workspace }} --user=root"
 
     steps:
       - uses: actions/checkout@v3
 
       - name: Update CMake
-        run: pip install --no-cache-dir 'cmake==3.25.*'
+        run: pip install --no-cache-dir 'cmake==3.26.*'
 
       - name: Generate cache key
         id: cache-key
