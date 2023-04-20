@@ -74,7 +74,7 @@ jobs:
             // https://docs.github.com/en/actions/learn-github-actions/contexts#fromjson
             // https://github.com/actions/runner/issues/982#issuecomment-809360765
             var ci_short = "${{ steps.ci-type.outputs.type }}" === "short"
-            
+
             var includes = []
             // Debug builds (short CI)
             includes.push({ image: 'conanio/gcc8-ubuntu16.04',      build_type: 'Debug' })
@@ -125,7 +125,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Update CMake
-        run: pip install --no-cache-dir 'cmake==3.25.*'
+        run: pip install --no-cache-dir 'cmake==3.26.*'
 
       - name: Generate cache key
         id: cache-key
@@ -175,8 +175,8 @@ jobs:
                 -DCMAKE_PREFIX_PATH="$PWD/build"            \
                 -DHICXX_ENABLE_TESTING=ON                   \
                 -DHICXX_BUILD_EXAMPLES=ON                   \
-                -S "${{ github.workspace }}"                \
-                -B "${{ github.workspace }}/build"
+                -S .                                        \
+                -B build
 
       - name: Build project
         run: cmake --build build -j $(nproc)
