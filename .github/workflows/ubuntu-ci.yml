@@ -34,13 +34,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-env:
-  CONAN_REVISIONS_ENABLED: "1"
-  CONAN_USER_HOME: "${{ github.workspace }}/conan-cache"
-  CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan-cache/short"
-  CONAN_V2_MODE: "1"
-
-
 defaults:
   run:
     shell: bash
@@ -51,16 +44,22 @@ jobs:
     outputs:
       matrix: ${{ steps.set-result.outputs.result }}
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v3
+        if: ${{ github.event_name != 'pull_request' }}
         with:
-          fetch-depth: 0
-          ref: ${{ github.event.after }}
+          ref: ${{ github.sha }}
+
+      - name: Checkout (PR)
+        uses: actions/checkout@v3
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Detect CI type
         id: ci-type
         run: |
-          if git log --format=%B -n 1 ${{ github.event.after }} | grep -qF '[ci full]'; then
+          if git log --format=%B -n 1 | grep -qF '[ci full]'; then
             echo "type=full" >> $GITHUB_OUTPUT
           else
             echo "type=short" >> $GITHUB_OUTPUT
@@ -75,12 +74,11 @@ jobs:
             // https://docs.github.com/en/actions/learn-github-actions/contexts#fromjson
             // https://github.com/actions/runner/issues/982#issuecomment-809360765
             var ci_short = "${{ steps.ci-type.outputs.type }}" === "short"
-            
+
             var includes = []
             // Debug builds (short CI)
             includes.push({ image: 'conanio/gcc8-ubuntu16.04',      build_type: 'Debug' })
             includes.push({ image: 'conanio/gcc12-ubuntu16.04',     build_type: 'Debug' })
-            includes.push({ image: 'conanio/clang8',                build_type: 'Debug' })
             includes.push({ image: 'conanio/clang14-ubuntu16.04',   build_type: 'Debug' })
             // Release builds (short CI)
             includes.push({ image: 'conanio/gcc12-ubuntu16.04',     build_type: 'Release' })
@@ -93,7 +91,6 @@ jobs:
             includes.push({ image: 'conanio/gcc10-ubuntu16.04',     build_type: 'Debug' })
             includes.push({ image: 'conanio/gcc11-ubuntu16.04',     build_type: 'Debug' })
             includes.push({ image: 'conanio/gcc12-ubuntu16.04',     build_type: 'Debug' })
-            includes.push({ image: 'conanio/clang9',                build_type: 'Debug' })
             includes.push({ image: 'conanio/clang10-ubuntu16.04',   build_type: 'Debug' })
             includes.push({ image: 'conanio/clang11-ubuntu16.04',   build_type: 'Debug' })
             includes.push({ image: 'conanio/clang12-ubuntu16.04',   build_type: 'Debug' })
@@ -104,8 +101,6 @@ jobs:
             includes.push({ image: 'conanio/gcc9-ubuntu16.04',      build_type: 'Release' })
             includes.push({ image: 'conanio/gcc10-ubuntu16.04',     build_type: 'Release' })
             includes.push({ image: 'conanio/gcc11-ubuntu16.04',     build_type: 'Release' })
-            includes.push({ image: 'conanio/clang8',                build_type: 'Release' })
-            includes.push({ image: 'conanio/clang9',                build_type: 'Release' })
             includes.push({ image: 'conanio/clang10-ubuntu16.04',   build_type: 'Release' })
             includes.push({ image: 'conanio/clang11-ubuntu16.04',   build_type: 'Release' })
             includes.push({ image: 'conanio/clang12-ubuntu16.04',   build_type: 'Release' })
@@ -120,14 +115,17 @@ jobs:
       matrix: ${{ fromJSON(needs.matrix-factory.outputs.matrix) }}
 
     container:
-      image: ${{ matrix.image }}:latest
-      options: "-v ${{ github.workspace }}:${{ github.workspace }} --user=root"
+      image: ${{ matrix.image }}:2.0.4
+      options: "--user=root"
+
+    env:
+      CONAN_HOME: '/home/conan/.conan2'
 
     steps:
       - uses: actions/checkout@v3
 
       - name: Update CMake
-        run: pip install --no-cache-dir 'cmake==3.25.*'
+        run: pip install --no-cache-dir 'cmake==3.26.*'
 
       - name: Generate cache key
         id: cache-key
@@ -143,49 +141,48 @@ jobs:
         uses: actions/cache@v3
         with:
           key: conan-${{ steps.cache-key.outputs.key }}
-          path: ${{ env.CONAN_USER_HOME }}
+          path: ${{ env.CONAN_HOME }}
 
       - name: Clean Conan cache (pre-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
-          conan remove -f "*" --builds
-          conan remove -f "*" --src
-          conan remove -f "*" --system-reqs
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
+          conan remove --confirm "*"
 
       - name: Install build dependencies
         run: |
-          mkdir build
-          cd build
-          conan install ..                 \
-            --build=outdated               \
-            -s compiler.cppstd=17          \
-            -s compiler.libcxx=libstdc++11 \
-            -s build_type=${{ matrix.build_type }}
+          conan install .                             \
+             --build=missing                          \
+             --build=cascade                          \
+             -pr default                              \
+             -s build_type="${{ matrix.build_type }}" \
+             -s compiler.libcxx=libstdc++11           \
+             -s compiler.cppstd=17                    \
+             --output-folder=build
 
       - name: Clean Conan cache (post-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
-          conan remove -f "*" --builds
-          conan remove -f "*" --src
-          conan remove -f "*" --system-reqs
-          conan remove -f "*" --outdated
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
 
       - name: Configure project
         run: |
-          git config --global --add safe.directory ${{ github.workspace }}
-
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                -DCMAKE_PREFIX_PATH="$PWD/build"            \
                 -DHICXX_ENABLE_TESTING=ON                   \
                 -DHICXX_BUILD_EXAMPLES=ON                   \
-                -S "${{ github.workspace }}"                \
-                -B "${{ github.workspace }}/build"          \
-                -DCMAKE_MODULE_PATH="${{ github.workspace }}/build/"
+                -S .                                        \
+                -B build
 
       - name: Build project
-        run: cmake --build ${{ github.workspace }}/build -j $(nproc)
+        run: cmake --build build -j $(nproc)
 
       - name: Run unit tests
-        working-directory: ${{ github.workspace }}/build
+        working-directory: build
         run: |
           ctest --test-dir .        \
                 --schedule-random   \
