@@ -35,10 +35,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CONAN_REVISIONS_ENABLED: "1"
-  CONAN_USER_HOME: "${{ github.workspace }}/conan-cache"
-  CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan-cache/short"
-  CONAN_V2_MODE: "1"
+  CONAN_HOME: "${{ github.workspace }}/.conan2"
 
 defaults:
   run:
@@ -53,7 +50,7 @@ jobs:
 
       - name: Generate requirements.txt for pip
         run: |
-          echo 'conan==1.59.*' > requirements.txt
+          echo 'conan==2.0.*' > requirements.txt
 
       - uses: actions/setup-python@v4
         with:
@@ -68,41 +65,41 @@ jobs:
         id: cache-conan
         uses: actions/cache@v3
         with:
-          key: conan-${{ hashFiles('conanfile.py', '.github/workflows/windows-ci.yml') }}
-          path: ${{ env.CONAN_USER_HOME }}
+          key: conan-${{ hashFiles('conanfile.txt', '.github/workflows/windows-ci.yml') }}
+          path: ${{ env.CONAN_HOME }}
+
+      - name: Configure Conan
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        run: |
+          conan profile detect --force
 
       - name: Clean Conan cache (pre-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
-          conan remove -f "*" --builds
-          conan remove -f "*" --src
-          conan remove -f "*" --system-reqs
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
+          conan remove --confirm "*"
 
       - name: Install build dependencies
         run: |
-          mkdir build
-          cd build
-          conan install ..        \
-            --build=outdated      \
-            -s compiler.cppstd=17 \
-            -s build_type=Release
-
-      - name: Clean Conan cache (post-build)
-        if: steps.cache-conan.outputs.cache-hit != 'true'
-        run: |
-          conan remove -f "*" --builds
-          conan remove -f "*" --src
-          conan remove -f "*" --system-reqs
-          conan remove -f "*" --outdated
+          conan install .            \
+             --build=missing         \
+             --build=cascade         \
+             -pr default             \
+             -s build_type=Release   \
+             -s compiler=msvc        \
+             -s compiler.cppstd=17   \
+             --output-folder=build
 
       - name: Configure project
         run: |
-          cmake -DCMAKE_BUILD_TYPE=Release \
-                -DHICXX_ENABLE_TESTING=ON  \
-                -DHICXX_BUILD_EXAMPLES=ON  \
-                -S "$PWD"                  \
-                -B "$PWD/build"            \
-                -DCMAKE_MODULE_PATH="$PWD/build"
+          cmake -DCMAKE_BUILD_TYPE=Release       \
+                -DCMAKE_PREFIX_PATH="$PWD/build" \
+                -DHICXX_ENABLE_TESTING=ON        \
+                -DHICXX_BUILD_EXAMPLES=ON        \
+                -S "$PWD"                        \
+                -B "$PWD/build"
 
       - name: Build project
         run: cmake --build build --config Release

@@ -9,7 +9,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/catchorg/Catch2.git
     GIT_TAG v3.3.1)
 
-find_package(Catch2 3 QUIET)
+find_package(Catch2 3 CONFIG QUIET)
 if (NOT Catch2_FOUND)
     FetchContent_MakeAvailable(Catch2)
 endif()
