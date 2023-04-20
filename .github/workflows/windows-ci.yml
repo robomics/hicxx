@@ -92,6 +92,13 @@ jobs:
              -s compiler.cppstd=17   \
              --output-folder=build
 
+      - name: Clean Conan cache (post-build)
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        run: |
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
+
       - name: Configure project
         run: |
           cmake -DCMAKE_BUILD_TYPE=Release       \
