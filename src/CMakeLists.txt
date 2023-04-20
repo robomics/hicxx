@@ -22,27 +22,27 @@ FetchContent_Declare(
     GIT_TAG 2.0.6)
 
 if(HICXX_USE_CURL)
-    find_package(CURL REQUIRED)
+    find_package(CURL CONFIG REQUIRED)
 endif()
 
 if(HICXX_USE_ZLIBNG)
     set(ZLIB_ENABLE_TESTS OFF)
     set(WITH_GTEST OFF)
-    find_package(zlib-ng 2 QUIET)
+    find_package(zlib-ng 2 CONFIG QUIET)
     if(NOT zlib-ng_FOUND)
         FetchContent_MakeAvailable(zlib-ng)
     endif()
 else()
-    find_package(ZLIB REQUIRED)
+    find_package(ZLIB CONFIG REQUIRED)
 endif()
 
 
-find_package(fmt 9.1 QUIET)
+find_package(fmt 9.1 CONFIG QUIET)
 if (NOT fmt_FOUND)
     FetchContent_MakeAvailable(fmt)
 endif()
 
-find_package(tsl-ordered-map 1.1 QUIET)
+find_package(tsl-ordered-map 1.1 CONFIG QUIET)
 if(NOT tsl-ordered-map_FOUND)
     FetchContent_MakeAvailable(tsl-ordered-map)
 endif()
