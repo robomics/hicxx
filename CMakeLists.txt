@@ -4,7 +4,7 @@
 
 
 cmake_minimum_required(VERSION 3.18)
-cmake_policy(VERSION 3.18...3.25)
+cmake_policy(VERSION 3.18...3.26)
 
 project(
         hicxx
