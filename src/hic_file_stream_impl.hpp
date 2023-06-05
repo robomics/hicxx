@@ -209,33 +209,11 @@ inline const char *hicxxZError(int status) {
 #endif
 }
 
-inline auto HiCFileStream::initZStream() -> ZStream {
-#ifdef HICXX_USE_ZLIBNG
-    ZStream zs(new zng_stream, [&](auto *ptr) {
-        zng_inflateEnd(ptr);
-        delete ptr;
-    });
-#else
-    ZStream zs(new z_stream, [&](auto *ptr) {
-        inflateEnd(ptr);
-        delete ptr;
-    });
-#endif
-    zs->zalloc = Z_NULL;
-    zs->zfree = Z_NULL;
-    zs->opaque = Z_NULL;
-    // Signal no input data is provided for initialization
-    zs->avail_in = 0;
-    zs->next_in = Z_NULL;
-
-#ifdef HICXX_USE_ZLIBNG
-    const auto status = zng_inflateInit(zs.get());
-#else
-    const auto status = inflateInit(zs.get());
-#endif
-    if (status != Z_OK) {
-        throw std::runtime_error(fmt::format(
-            FMT_STRING("failed to initialize zlib decompression stream: {}"), hicxxZError(status)));
+inline auto HiCFileStream::init_decompressor() -> Decompressor {
+    Decompressor zs(libdeflate_alloc_decompressor(),
+                              [](auto *ptr) { libdeflate_free_decompressor(ptr); });
+    if (!zs) {
+        throw std::runtime_error("failed to initialize zlib decompression stream");
     }
 
     return zs;
@@ -378,55 +356,35 @@ inline void HiCFileStream::readAndInflate(indexEntry idx, std::string &plainText
     try {
         // _strbuff is used to store compressed data
         // plainTextBuffer is used to store decompressed data
-        assert(_zlibstream);
+        assert(_decompressor);
         assert(idx.size > 0);
         const auto buffSize = static_cast<std::size_t>(idx.size);
+
+        plainTextBuffer.reserve(buffSize * 3);
+        plainTextBuffer.resize(plainTextBuffer.capacity());
 
         _fs->seekg(idx.position);
         _fs->read(_strbuff, buffSize);
 
-        _zlibstream->avail_in = static_cast<uInt>(_strbuff.size());
-        _zlibstream->next_in = reinterpret_cast<Bytef *>(&*(_strbuff.begin()));
-
-#ifdef HICXX_USE_ZLIBNG
-        auto status = zng_inflateReset(_zlibstream.get());
-#else
-        auto status = inflateReset(_zlibstream.get());
-#endif
-        if (status != Z_OK) {
-            plainTextBuffer.clear();
-            throw std::runtime_error(hicxxZError(status));
-        }
-
-        plainTextBuffer.reserve(buffSize * 3);
-        plainTextBuffer.resize(plainTextBuffer.capacity());
-        std::size_t current_size = 0;
+        std::size_t bytes_decompressed{};
 
         while (true) {
-            _zlibstream->avail_out = static_cast<uInt>(plainTextBuffer.size() - current_size);
-            _zlibstream->next_out =
-                reinterpret_cast<Bytef *>(&*(plainTextBuffer.begin() + std::int64_t(current_size)));
-
-#ifdef HICXX_USE_ZLIBNG
-            status = zng_inflate(_zlibstream.get(), Z_NO_FLUSH);
-#else
-            status = inflate(_zlibstream.get(), Z_NO_FLUSH);
-#endif
-            if (status == Z_STREAM_END) {
-                // assert(_zlibstream->avail_in == 0);
+            using LR = libdeflate_result;
+            const auto status = libdeflate_zlib_decompress(
+                _decompressor.get(), _strbuff.data(), _strbuff.size(), plainTextBuffer.data(),
+                plainTextBuffer.size(), &bytes_decompressed);
+            if (status == LR::LIBDEFLATE_SUCCESS) {
+                plainTextBuffer.resize(bytes_decompressed);
                 break;
             }
-            if (status != Z_OK) {
-                plainTextBuffer.clear();
-                throw std::runtime_error(hicxxZError(status));
+            if (status == LR::LIBDEFLATE_INSUFFICIENT_SPACE) {
+                plainTextBuffer.resize(plainTextBuffer.size() + buffSize);
+                continue;
             }
-
-            current_size = plainTextBuffer.size();
-            plainTextBuffer.resize(current_size + buffSize);
+            if (status == LR::LIBDEFLATE_BAD_DATA) {
+                throw std::runtime_error("invalid or corrupted data");
+            }
         }
-
-        // assert(plainTextBuffer.size() >= _zlibstream->total_out);
-        plainTextBuffer.resize(_zlibstream->total_out);
     } catch (const std::exception &e) {
         throw std::runtime_error(fmt::format(FMT_STRING("failed to decompress block at pos {}: {}"),
                                              idx.position, e.what()));

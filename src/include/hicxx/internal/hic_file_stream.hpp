@@ -4,11 +4,7 @@
 
 #pragma once
 
-#ifdef HICXX_USE_ZLIBNG
-#include <zlib-ng.h>
-#else
-#include <zlib.h>
-#endif
+#include <libdeflate.h>
 
 #include <cstdint>
 #include <map>
@@ -32,15 +28,11 @@ struct BlockMap {
 };
 
 class HiCFileStream {
-#ifdef HICXX_USE_ZLIBNG
-    using ZStream = UniquePtrWithDeleter<zng_stream>;
-#else
-    using ZStream = UniquePtrWithDeleter<z_stream>;
-#endif
+    using Decompressor = UniquePtrWithDeleter<libdeflate_decompressor>;
     std::shared_ptr<filestream::FileStream> _fs{};
     std::shared_ptr<const HiCHeader> _header{};
     std::string _strbuff{};
-    ZStream _zlibstream{initZStream()};
+    Decompressor _decompressor{init_decompressor()};
 
    public:
     HiCFileStream() = default;
@@ -92,7 +84,7 @@ class HiCFileStream {
     [[nodiscard]] static bool checkMagicString(filestream::FileStream &fs);
     [[nodiscard]] std::int64_t masterOffset() const noexcept;
 
-    [[nodiscard]] static auto initZStream() -> ZStream;
+    [[nodiscard]] static auto init_decompressor() -> Decompressor;
 };
 }  // namespace hicxx::internal
 

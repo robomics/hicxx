@@ -16,26 +16,15 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/Tessil/ordered-map
     GIT_TAG v1.1.0)
 
-FetchContent_Declare(
-    zlib-ng
-    GIT_REPOSITORY https://github.com/zlib-ng/zlib-ng
-    GIT_TAG 2.0.6)
-
 if(HICXX_USE_CURL)
     find_package(CURL CONFIG REQUIRED)
 endif()
 
-if(HICXX_USE_ZLIBNG)
-    set(ZLIB_ENABLE_TESTS OFF)
-    set(WITH_GTEST OFF)
-    find_package(zlib-ng 2 CONFIG QUIET)
-    if(NOT zlib-ng_FOUND)
-        FetchContent_MakeAvailable(zlib-ng)
-    endif()
-else()
-    find_package(ZLIB CONFIG REQUIRED)
-endif()
-
+find_package(
+    libdeflate
+    CONFIG
+    QUIET
+    REQUIRED)
 
 find_package(fmt 9.1 CONFIG QUIET)
 if (NOT fmt_FOUND)
@@ -74,8 +63,7 @@ target_link_libraries(
               hicxx_project_warnings
               $<$<BOOL:${HICXX_USE_CURL}>:CURL::libcurl>
               fmt::fmt
-              tsl::ordered_map
-              $<IF:$<BOOL:${HICXX_USE_ZLIBNG}>,zlib,ZLIB::ZLIB>)
+              libdeflate::libdeflate
+              tsl::ordered_map)
 
-target_compile_definitions(hicxx INTERFACE FMT_ENFORCE_COMPILE_STRING $<$<BOOL:${HICXX_USE_CURL}>:HICXX_USE_CURL>
-                                           $<$<BOOL:${HICXX_USE_ZLIBNG}>:HICXX_USE_ZLIBNG>)
+target_compile_definitions(hicxx INTERFACE FMT_ENFORCE_COMPILE_STRING $<$<BOOL:${HICXX_USE_CURL}>:HICXX_USE_CURL>)

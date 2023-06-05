@@ -20,7 +20,6 @@ include(cmake/TestStdlibFeatures.cmake)
 
 option(HICXX_BUILD_EXAMPLES "Build hicxx example(s)" OFF)
 option(HICXX_ENABLE_TESTING "Build unit tests" ON)
-option(HICXX_USE_ZLIBNG "Use zlib-ng instead of zlib for decompression" OFF)
 option(HICXX_USE_CURL "Use cURL to read remote .hic files" OFF)
 
 add_library(hicxx_project_options INTERFACE)
