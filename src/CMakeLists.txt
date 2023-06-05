@@ -26,16 +26,23 @@ find_package(
     QUIET
     REQUIRED)
 
-find_package(fmt 9.1 CONFIG QUIET)
-if (NOT fmt_FOUND)
+find_package(
+    fmt
+    9.1
+    CONFIG
+    QUIET)
+if(NOT fmt_FOUND)
     FetchContent_MakeAvailable(fmt)
 endif()
 
-find_package(tsl-ordered-map 1.1 CONFIG QUIET)
+find_package(
+    tsl-ordered-map
+    1.1
+    CONFIG
+    QUIET)
 if(NOT tsl-ordered-map_FOUND)
     FetchContent_MakeAvailable(tsl-ordered-map)
 endif()
-
 
 target_sources(
     hicxx

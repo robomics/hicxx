@@ -239,9 +239,9 @@ inline void HiCFileStream::readBlockMap(std::int64_t fileOffset,
         const auto foundUnit = readMatrixUnit();
         std::ignore = _fs->read<std::int32_t>();  // oldIndex
         const auto sumCount = _fs->read<float>();
-        std::ignore = _fs->read<float>();  // occupiedCellCount
-        std::ignore = _fs->read<float>();  // stdDev
-        std::ignore = _fs->read<float>();  // percent95
+        std::ignore = _fs->read<float>();         // occupiedCellCount
+        std::ignore = _fs->read<float>();         // stdDev
+        std::ignore = _fs->read<float>();         // percent95
 
         const auto foundResolution = static_cast<std::int64_t>(_fs->read<std::int32_t>());
         const auto blockBinCount = _fs->read<std::int32_t>();
@@ -509,8 +509,8 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
         wantedNorm != NM::NONE) {
         if (expectedValues.empty()) {
             throw std::runtime_error(fmt::format(
-                FMT_STRING(
-                    "unable to find expected values normalization factors for {}:{} at {} ({})"),
+                FMT_STRING("unable to find expected values normalization factors for {}:{} at "
+                           "{} ({})"),
                 _header->getChromosome(chromId1).name, _header->getChromosome(chromId2).name,
                 wantedResolution, wantedUnit));
         }
