@@ -72,6 +72,18 @@ struct chromosome {
     constexpr bool operator>=(const chromosome &other) const noexcept {
         return index >= other.index;
     }
+    [[nodiscard]] bool is_all() const noexcept {
+        if (this->name == "All") {
+            return true;
+        }
+
+        auto all = this->name;
+
+        std::transform(all.begin(), all.end(), all.begin(),
+                       [&](const char c) { return std::tolower(c); });
+
+        return all == "all";
+    }
 };
 }  // namespace hicxx
 
