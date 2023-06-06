@@ -37,39 +37,39 @@ class HiCFile {
     [[nodiscard]] const std::string &name() const noexcept;
     [[nodiscard]] std::int32_t version() const noexcept;
     [[nodiscard]] const ChromosomeMap &chromosomes() const noexcept;
-    [[nodiscard]] const std::string &genomeID() const noexcept;
+    [[nodiscard]] const std::string &assembly() const noexcept;
     [[nodiscard]] const std::vector<std::int32_t> &resolutions() const noexcept;
 
-    [[nodiscard]] internal::MatrixSelector getMatrixSelector(
-        const chromosome &chrom, MatrixType matrixType, NormalizationMethod norm, MatrixUnit unit,
-        std::int32_t resolution, std::size_t blockCacheCapacity = DEFAULT_BLOCK_CACHE_CAPACITY);
-    [[nodiscard]] internal::MatrixSelector getMatrixSelector(
-        const std::string &chromName, MatrixType matrixType, NormalizationMethod norm,
+    [[nodiscard]] internal::MatrixSelector get_matrix_selector(
+        const chromosome &chrom, MatrixType matrix_type, NormalizationMethod norm, MatrixUnit unit,
+        std::int32_t resolution, std::size_t block_cache_capacity = DEFAULT_BLOCK_CACHE_CAPACITY);
+    [[nodiscard]] internal::MatrixSelector get_matrix_selector(
+        const std::string &chromName, MatrixType matrix_type, NormalizationMethod norm,
         MatrixUnit unit, std::int32_t resolution,
-        std::size_t blockCacheCapacity = DEFAULT_BLOCK_CACHE_CAPACITY);
-    [[nodiscard]] internal::MatrixSelector getMatrixSelector(
-        std::int32_t chromId, MatrixType matrixType, NormalizationMethod norm, MatrixUnit unit,
-        std::int32_t resolution, std::size_t blockCacheCapacity = DEFAULT_BLOCK_CACHE_CAPACITY);
+        std::size_t block_cache_capacity = DEFAULT_BLOCK_CACHE_CAPACITY);
+    [[nodiscard]] internal::MatrixSelector get_matrix_selector(
+        std::int32_t chrom_id, MatrixType matrix_type, NormalizationMethod norm, MatrixUnit unit,
+        std::int32_t resolution, std::size_t block_cache_capacity = DEFAULT_BLOCK_CACHE_CAPACITY);
 
-    [[nodiscard]] internal::MatrixSelector getMatrixSelector(
-        const chromosome &chrom1, const chromosome &chrom2, MatrixType matrixType,
+    [[nodiscard]] internal::MatrixSelector get_matrix_selector(
+        const chromosome &chrom1, const chromosome &chrom2, MatrixType matrix_type,
         NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution,
-        std::size_t blockCacheCapacity = DEFAULT_BLOCK_CACHE_CAPACITY);
-    [[nodiscard]] internal::MatrixSelector getMatrixSelector(
-        const std::string &chromName1, const std::string &chromName2, MatrixType matrixType,
+        std::size_t block_cache_capacity = DEFAULT_BLOCK_CACHE_CAPACITY);
+    [[nodiscard]] internal::MatrixSelector get_matrix_selector(
+        const std::string &chrom1_name, const std::string &chrom2_name, MatrixType matrix_type,
         NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution,
-        std::size_t blockCacheCapacity = DEFAULT_BLOCK_CACHE_CAPACITY);
-    [[nodiscard]] internal::MatrixSelector getMatrixSelector(
-        std::int32_t chromId1, std::int32_t chromId2, MatrixType matrixType,
+        std::size_t block_cache_capacity = DEFAULT_BLOCK_CACHE_CAPACITY);
+    [[nodiscard]] internal::MatrixSelector get_matrix_selector(
+        std::int32_t chrom1_id, std::int32_t chrom2_id, MatrixType matrix_type,
         NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution,
-        std::size_t blockCacheCapacity = DEFAULT_BLOCK_CACHE_CAPACITY);
+        std::size_t block_cache_capacity = DEFAULT_BLOCK_CACHE_CAPACITY);
 
-    [[nodiscard]] std::size_t numCachedFooters() const noexcept;
-    void purgeFooterCache();
+    [[nodiscard]] std::size_t num_cached_footers() const noexcept;
+    void purge_footer_cache();
 
    private:
-    [[nodiscard]] std::shared_ptr<const internal::HiCFooter> getFooter(
-        std::int32_t chromId1, std::int32_t chromId2, MatrixType matrixType,
+    [[nodiscard]] std::shared_ptr<const internal::HiCFooter> get_footer(
+        std::int32_t chrom1_id, std::int32_t chrom2_id, MatrixType matrix_type,
         NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution);
 };
 

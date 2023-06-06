@@ -15,7 +15,7 @@ namespace hicxx::internal {
 constexpr HiCFooterMetadata::operator bool() const noexcept { return fileOffset >= 0; }
 
 inline bool HiCFooterMetadata::operator==(const HiCFooterMetadata &other) const noexcept {
-    return url == other.url && matrixType == other.matrixType &&
+    return url == other.url && matrix_type == other.matrix_type &&
            normalization == other.normalization && unit == other.unit &&
            resolution == other.resolution && chrom1 == other.chrom1 && chrom2 == other.chrom2;
 }
@@ -37,7 +37,7 @@ inline bool HiCFooter::operator!=(const HiCFooter &other) const noexcept {
 constexpr const HiCFooterMetadata &HiCFooter::metadata() const noexcept { return _metadata; }
 constexpr HiCFooterMetadata &HiCFooter::metadata() noexcept { return _metadata; }
 constexpr const std::string &HiCFooter::url() const noexcept { return metadata().url; }
-constexpr MatrixType HiCFooter::matrixType() const noexcept { return metadata().matrixType; }
+constexpr MatrixType HiCFooter::matrix_type() const noexcept { return metadata().matrix_type; }
 constexpr NormalizationMethod HiCFooter::normalization() const noexcept {
     return metadata().normalization;
 }
@@ -78,7 +78,7 @@ constexpr std::vector<double> &HiCFooter::c2Norm() noexcept {
 template <>
 struct std::hash<hicxx::internal::HiCFooterMetadata> {
     inline std::size_t operator()(hicxx::internal::HiCFooterMetadata const &m) const noexcept {
-        return hicxx::internal::hash_combine(0, m.url, m.matrixType, m.normalization, m.unit,
+        return hicxx::internal::hash_combine(0, m.url, m.matrix_type, m.normalization, m.unit,
                                              m.resolution, m.chrom1, m.chrom2);
     }
 };

@@ -30,7 +30,7 @@ TEST_CASE("HiCFile accessors") {
         CHECK(f.name() == pathV8);
         CHECK(f.version() == 8);
         CHECK(f.chromosomes().size() == 9);
-        CHECK(f.genomeID() == "dm6");
+        CHECK(f.assembly() == "dm6");
 
         CHECK(f.resolutions().size() == 10);
         CHECK(f.resolutions().front() == 2500000);
@@ -65,35 +65,35 @@ TEST_CASE("HiCFile footer cache") {
 
     REQUIRE(f.resolutions().size() == 10);
 
-    CHECK(f.numCachedFooters() == 0);
+    CHECK(f.num_cached_footers() == 0);
     for (const auto res : f.resolutions()) {
-        std::ignore = f.getMatrixSelector("chr2L", MatrixType::observed, NormalizationMethod::NONE,
-                                          MatrixUnit::BP, res);
+        std::ignore = f.get_matrix_selector("chr2L", MatrixType::observed,
+                                            NormalizationMethod::NONE, MatrixUnit::BP, res);
     }
 
-    CHECK(f.numCachedFooters() == f.resolutions().size());
+    CHECK(f.num_cached_footers() == f.resolutions().size());
 
-    const auto sel1 = f.getMatrixSelector("chr2L", MatrixType::observed, NormalizationMethod::NONE,
-                                          MatrixUnit::BP, 2500000);
-    const auto sel2 = f.getMatrixSelector("chr2L", MatrixType::observed, NormalizationMethod::NONE,
-                                          MatrixUnit::BP, 2500000);
+    const auto sel1 = f.get_matrix_selector("chr2L", MatrixType::observed,
+                                            NormalizationMethod::NONE, MatrixUnit::BP, 2500000);
+    const auto sel2 = f.get_matrix_selector("chr2L", MatrixType::observed,
+                                            NormalizationMethod::NONE, MatrixUnit::BP, 2500000);
 
     // this check relies on the fact that chrom1Norm are stored in the footer, and that footers are
     // looked up in the cache when creating matrix selectors
     CHECK(&sel1.chrom1Norm() == &sel2.chrom1Norm());
 
-    f.purgeFooterCache();
-    CHECK(f.numCachedFooters() == 0);
+    f.purge_footer_cache();
+    CHECK(f.num_cached_footers() == 0);
 
-    const auto sel3 = f.getMatrixSelector("chr2L", MatrixType::observed, NormalizationMethod::NONE,
-                                          MatrixUnit::BP, 2500000);
+    const auto sel3 = f.get_matrix_selector("chr2L", MatrixType::observed,
+                                            NormalizationMethod::NONE, MatrixUnit::BP, 2500000);
 
-    CHECK(f.numCachedFooters() == 1);
+    CHECK(f.num_cached_footers() == 1);
     CHECK(&sel1.chrom1Norm() != &sel3.chrom1Norm());
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("HiCFile getMatrixSelector") {
+TEST_CASE("HiCFile get_matrix_selector") {
     HiCFile f(pathV8);
 
     REQUIRE(f.chromosomes().size() == 9);
@@ -107,29 +107,29 @@ TEST_CASE("HiCFile getMatrixSelector") {
     const auto chrom2 = f.chromosomes().at("chr2R");
 
     SECTION("intra-chromosomal") {
-        auto sel = f.getMatrixSelector(chrom1.name, mt, norm, unit, res);
+        auto sel = f.get_matrix_selector(chrom1.name, mt, norm, unit, res);
         CHECK(sel.chrom1() == chrom1);
         CHECK(sel.isIntra());
 
-        sel = f.getMatrixSelector(chrom1.index, mt, norm, unit, res);
+        sel = f.get_matrix_selector(chrom1.index, mt, norm, unit, res);
         CHECK(sel.chrom1() == chrom1);
         CHECK(sel.isIntra());
 
-        sel = f.getMatrixSelector(chrom1, mt, norm, unit, res);
+        sel = f.get_matrix_selector(chrom1, mt, norm, unit, res);
         CHECK(sel.chrom1() == chrom1);
         CHECK(sel.isIntra());
     }
 
     SECTION("inter-chromosomal") {
-        auto sel = f.getMatrixSelector(chrom1.name, chrom2.name, mt, norm, unit, res);
+        auto sel = f.get_matrix_selector(chrom1.name, chrom2.name, mt, norm, unit, res);
         CHECK(sel.chrom1() == chrom1);
         CHECK(sel.chrom2() == chrom2);
 
-        sel = f.getMatrixSelector(chrom1.index, chrom2.index, mt, norm, unit, res);
+        sel = f.get_matrix_selector(chrom1.index, chrom2.index, mt, norm, unit, res);
         CHECK(sel.chrom1() == chrom1);
         CHECK(sel.chrom2() == chrom2);
 
-        sel = f.getMatrixSelector(chrom1, chrom2, mt, norm, unit, res);
+        sel = f.get_matrix_selector(chrom1, chrom2, mt, norm, unit, res);
         CHECK(sel.chrom1() == chrom1);
         CHECK(sel.chrom2() == chrom2);
 
@@ -138,20 +138,20 @@ TEST_CASE("HiCFile getMatrixSelector") {
     }
 
     SECTION("invalid chromosome") {
-        CHECK_THROWS(f.getMatrixSelector("not-a-chromosome", mt, norm, unit, res));
-        CHECK_THROWS(f.getMatrixSelector(chrom1.name, "not-a-chromosome", mt, norm, unit, res));
-        CHECK_THROWS(f.getMatrixSelector(999, mt, norm, unit, res));
-        CHECK_THROWS(f.getMatrixSelector(chrom1.index, 999, mt, norm, unit, res));
+        CHECK_THROWS(f.get_matrix_selector("not-a-chromosome", mt, norm, unit, res));
+        CHECK_THROWS(f.get_matrix_selector(chrom1.name, "not-a-chromosome", mt, norm, unit, res));
+        CHECK_THROWS(f.get_matrix_selector(999, mt, norm, unit, res));
+        CHECK_THROWS(f.get_matrix_selector(chrom1.index, 999, mt, norm, unit, res));
     }
 
     SECTION("malformed") {
-        CHECK_THROWS(f.getMatrixSelector(chrom2, chrom1, mt, norm, unit, res));  // NOLINT
-        CHECK_THROWS(f.getMatrixSelector(chrom1, mt, norm, unit, 123));
-        CHECK_THROWS(
-            f.getMatrixSelector(chrom1, MatrixType::expected, NormalizationMethod::VC, unit, res));
+        CHECK_THROWS(f.get_matrix_selector(chrom2, chrom1, mt, norm, unit, res));  // NOLINT
+        CHECK_THROWS(f.get_matrix_selector(chrom1, mt, norm, unit, 123));
+        CHECK_THROWS(f.get_matrix_selector(chrom1, MatrixType::expected, NormalizationMethod::VC,
+                                           unit, res));
 
         // Matrix does not have contacts for fragments
-        CHECK_THROWS(f.getMatrixSelector(chrom1, mt, norm, MatrixUnit::FRAG, res));
+        CHECK_THROWS(f.get_matrix_selector(chrom1, mt, norm, MatrixUnit::FRAG, res));
     }
 }
 

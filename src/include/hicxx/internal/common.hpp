@@ -33,7 +33,7 @@ struct indexEntry {
     constexpr bool operator!=(const indexEntry &other) const noexcept { return !(*this == other); }
 };
 
-// sparse matrixType entry
+// sparse matrix_type entry
 struct contactRecord {
     std::int64_t bin1_start{};
     std::int64_t bin2_start{};

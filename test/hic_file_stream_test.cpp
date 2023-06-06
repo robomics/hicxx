@@ -78,7 +78,7 @@ TEST_CASE("readFooter (v8)", "[v8]") {
         const auto f = s.readFooter(chr2L.index, chr2L.index, MatrixType::observed,
                                     NormalizationMethod::NONE, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.matrix_type() == MatrixType::observed);
         CHECK(f.normalization() == NormalizationMethod::NONE);
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);
@@ -92,7 +92,7 @@ TEST_CASE("readFooter (v8)", "[v8]") {
         const auto f = s.readFooter(chr2L.index, chr2R.index, MatrixType::observed,
                                     NormalizationMethod::VC, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.matrix_type() == MatrixType::observed);
         CHECK(f.normalization() == NormalizationMethod::VC);
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);
@@ -106,7 +106,7 @@ TEST_CASE("readFooter (v8)", "[v8]") {
         const auto f = s.readFooter(chr2L.index, chr2R.index, MatrixType::observed,
                                     NormalizationMethod::VC_SQRT, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.matrix_type() == MatrixType::observed);
         CHECK(f.normalization() == NormalizationMethod::VC_SQRT);
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);
@@ -120,7 +120,7 @@ TEST_CASE("readFooter (v8)", "[v8]") {
         const auto f = s.readFooter(chr2L.index, chr2R.index, MatrixType::observed,
                                     NormalizationMethod::KR, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.matrix_type() == MatrixType::observed);
         CHECK(f.normalization() == NormalizationMethod::KR);
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);
@@ -134,7 +134,7 @@ TEST_CASE("readFooter (v8)", "[v8]") {
         const auto f = s.readFooter(chr2L.index, chr2R.index, MatrixType::observed,
                                     NormalizationMethod::SCALE, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.matrix_type() == MatrixType::observed);
         CHECK(f.normalization() == NormalizationMethod::SCALE);
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);
@@ -148,7 +148,7 @@ TEST_CASE("readFooter (v8)", "[v8]") {
         const auto f = s.readFooter(chr2L.index, chr2L.index, MatrixType::oe,
                                     NormalizationMethod::NONE, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType() == MatrixType::oe);
+        CHECK(f.matrix_type() == MatrixType::oe);
         CHECK(f.normalization() == NormalizationMethod::NONE);
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);
@@ -168,7 +168,7 @@ TEST_CASE("readFooter (v8)", "[v8]") {
         const auto f = s.readFooter(chr2L.index, chr2L.index, MatrixType::expected,
                                     NormalizationMethod::NONE, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType() == MatrixType::expected);
+        CHECK(f.matrix_type() == MatrixType::expected);
         CHECK(f.normalization() == NormalizationMethod::NONE);
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);
@@ -203,7 +203,7 @@ TEST_CASE("readFooter (v9)", "[v9]") {
         const auto f = s.readFooter(chr2L.index, chr2L.index, MatrixType::observed,
                                     NormalizationMethod::NONE, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.matrix_type() == MatrixType::observed);
         CHECK(f.normalization() == NormalizationMethod::NONE);
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);
@@ -217,7 +217,7 @@ TEST_CASE("readFooter (v9)", "[v9]") {
         const auto f = s.readFooter(chr2L.index, chr2R.index, MatrixType::observed,
                                     NormalizationMethod::VC, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.matrix_type() == MatrixType::observed);
         CHECK(f.normalization() == NormalizationMethod::VC);
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);
@@ -231,7 +231,7 @@ TEST_CASE("readFooter (v9)", "[v9]") {
         const auto f = s.readFooter(chr2L.index, chr2R.index, MatrixType::observed,
                                     NormalizationMethod::VC_SQRT, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.matrix_type() == MatrixType::observed);
         CHECK(f.normalization() == NormalizationMethod::VC_SQRT);
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);
@@ -246,7 +246,7 @@ TEST_CASE("readFooter (v9)", "[v9]") {
         const auto f = s.readFooter(chr2L.index, chr2R.index, MatrixType::observed,
     NormalizationMethod::KR, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.matrix_type() == MatrixType::observed);
         CHECK(f.normalization() == NormalizationMethod::KR);
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);
@@ -260,7 +260,7 @@ TEST_CASE("readFooter (v9)", "[v9]") {
         const auto f = s.readFooter(chr2L.index, chr2R.index, MatrixType::observed,
                                     NormalizationMethod::SCALE, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType() == MatrixType::observed);
+        CHECK(f.matrix_type() == MatrixType::observed);
         CHECK(f.normalization() == NormalizationMethod::SCALE);
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);
@@ -274,7 +274,7 @@ TEST_CASE("readFooter (v9)", "[v9]") {
         const auto f = s.readFooter(chr2L.index, chr2L.index, MatrixType::oe,
                                     NormalizationMethod::NONE, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType() == MatrixType::oe);
+        CHECK(f.matrix_type() == MatrixType::oe);
         CHECK(f.normalization() == NormalizationMethod::NONE);
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);
@@ -294,7 +294,7 @@ TEST_CASE("readFooter (v9)", "[v9]") {
         const auto f = s.readFooter(chr2L.index, chr2L.index, MatrixType::expected,
                                     NormalizationMethod::NONE, MatrixUnit::BP, 5000);
 
-        CHECK(f.matrixType() == MatrixType::expected);
+        CHECK(f.matrix_type() == MatrixType::expected);
         CHECK(f.normalization() == NormalizationMethod::NONE);
         CHECK(f.unit() == MatrixUnit::BP);
         CHECK(f.resolution() == 5000);

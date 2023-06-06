@@ -46,8 +46,8 @@ class HiCFileStream {
     [[nodiscard]] std::int32_t version() const noexcept;
 
     // reads the footer given a pair of chromosomes, norm, unit (BP or FRAG) and resolution.
-    [[nodiscard]] HiCFooter readFooter(std::int32_t chromId1, std::int32_t chromId2,
-                                       MatrixType matrixType, NormalizationMethod norm,
+    [[nodiscard]] HiCFooter readFooter(std::int32_t chrom1_id, std::int32_t chrom2_id,
+                                       MatrixType matrix_type, NormalizationMethod norm,
                                        MatrixUnit unit, std::int32_t wantedResolution);
 
     [[nodiscard]] static MatrixType readMatrixType(filestream::FileStream &fs, std::string &buff);

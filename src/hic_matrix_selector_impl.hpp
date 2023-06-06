@@ -34,11 +34,11 @@ inline T MatrixSelector::BinaryBuffer::read() {
 
 inline MatrixSelector::MatrixSelector(std::shared_ptr<HiCFileStream> fs,
                                       std::shared_ptr<const HiCFooter> footer,
-                                      std::size_t blockCacheCapacity)
+                                      std::size_t block_cache_capacity)
     : _fs(std::move(fs)),
       _footer(std::move(footer)),
       _blockMap(readBlockMap(*_fs, *_footer)),
-      _blockCache(blockCacheCapacity) {}
+      _blockCache(block_cache_capacity) {}
 
 inline const chromosome &MatrixSelector::chrom1() const noexcept { return _footer->chrom1(); }
 
@@ -46,7 +46,7 @@ inline const chromosome &MatrixSelector::chrom2() const noexcept { return _foote
 
 inline std::int64_t MatrixSelector::resolution() const noexcept { return _footer->resolution(); }
 
-inline MatrixType MatrixSelector::matrixType() const noexcept { return _footer->matrixType(); }
+inline MatrixType MatrixSelector::matrix_type() const noexcept { return _footer->matrix_type(); }
 
 inline NormalizationMethod MatrixSelector::normalizationMethod() const noexcept {
     return _footer->normalization();
@@ -185,7 +185,7 @@ inline contactRecord MatrixSelector::processInteraction(contactRecord record) {
     assert(isInter() || record.bin1_start <= record.bin2_start);
 
     const auto skipNormalization =
-        normalizationMethod() == NormalizationMethod::NONE || matrixType() == MatrixType::expected;
+        normalizationMethod() == NormalizationMethod::NONE || matrix_type() == MatrixType::expected;
 
     if (!skipNormalization) {
         const auto bin1 = static_cast<std::size_t>(record.bin1_start);
@@ -198,7 +198,7 @@ inline contactRecord MatrixSelector::processInteraction(contactRecord record) {
     record.bin1_start *= resolution();
     record.bin2_start *= resolution();
 
-    if (matrixType() == MatrixType::observed) {
+    if (matrix_type() == MatrixType::observed) {
         return record;
     }
 
@@ -213,12 +213,12 @@ inline contactRecord MatrixSelector::processInteraction(contactRecord record) {
         return float(expected[i]);
     }();
 
-    if (matrixType() == MatrixType::expected) {
+    if (matrix_type() == MatrixType::expected) {
         record.count = expectedCount;
         return record;
     }
 
-    assert(matrixType() == MatrixType::oe);
+    assert(matrix_type() == MatrixType::oe);
     record.count /= expectedCount;
 
     return record;
@@ -453,7 +453,7 @@ inline void MatrixSelector::readBlockNumbers(std::int64_t bin1, std::int64_t bin
     // check region part that overlaps with lower left triangle but only if intrachromosomal
     const auto checkLowerLeftTri = isIntra();
     buffer.clear();
-    // first check the upper triangular matrixType
+    // first check the upper triangular matrix_type
     for (auto row = row1; row <= row2; ++row) {
         for (auto col = col1; col <= col2; ++col) {
             buffer.insert(static_cast<std::size_t>(row * blockColumnCount + col));

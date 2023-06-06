@@ -63,12 +63,24 @@ def make_cli():
         help="Ratio of 1D to 2D queries. Use 0 or 1 to only test 1D or 2D queries.",
     )
 
-    cli.add_argument("--duration", type=positive_int, default=60, help="Duration in seconds.")
     cli.add_argument(
-        "--path-to-hicxx-dump", type=valid_executable, default="hicxx_dump", help="Path to hicxx_example binary."
+        "--duration", type=positive_int, default=60, help="Duration in seconds."
     )
-    cli.add_argument("--query-length-avg", type=float, default=5_000_000, help="Average query size.")
-    cli.add_argument("--query-length-std", type=float, default=1_000_000, help="Standard deviation for query size.")
+    cli.add_argument(
+        "--path-to-hicxx-dump",
+        type=valid_executable,
+        default="hicxx_dump",
+        help="Path to hicxx_example binary.",
+    )
+    cli.add_argument(
+        "--query-length-avg", type=float, default=5_000_000, help="Average query size."
+    )
+    cli.add_argument(
+        "--query-length-std",
+        type=float,
+        default=1_000_000,
+        help="Standard deviation for query size.",
+    )
     cli.add_argument("--seed", type=int, default=2074288341)
     cli.add_argument(
         "--nproc",
@@ -85,7 +97,13 @@ def cooler_dump(selector, query1: str, query2: str):
     return selector.fetch(query1, query2)
 
 
-def hicxx_dump(hicxx_dump_bin: pathlib.Path, path_to_hic_file: pathlib.Path, resolution: int, query1: str, query2: str):
+def hicxx_dump(
+    hicxx_dump_bin: pathlib.Path,
+    path_to_hic_file: pathlib.Path,
+    resolution: int,
+    query1: str,
+    query2: str,
+):
     cmd = [
         shutil.which(str(hicxx_dump_bin)),
         "observed",
@@ -103,21 +121,26 @@ def hicxx_dump(hicxx_dump_bin: pathlib.Path, path_to_hic_file: pathlib.Path, res
 
     with sp.Popen(cmd, stdin=None, stderr=sp.PIPE, stdout=sp.PIPE) as coolerpp_dump:
         df = pd.read_table(
-            coolerpp_dump.stdout, names=["chrom1", "start1", "end1", "chrom2", "start2", "end2", "count"]
+            coolerpp_dump.stdout,
+            names=["chrom1", "start1", "end1", "chrom2", "start2", "end2", "count"],
         )
         coolerpp_dump.communicate()
         if (code := coolerpp_dump.returncode) != 0:
             print(coolerpp_dump.stderr, file=sys.stderr)
             raise RuntimeError(f"{cmd} terminated with code {code}")
 
-    return df.sort_values(by=["chrom1", "chrom2", "start1", "start2"]).reset_index(drop=True)
+    return df.sort_values(by=["chrom1", "chrom2", "start1", "start2"]).reset_index(
+        drop=True
+    )
 
 
 def read_chrom_sizes(path_to_cooler_file: pathlib.Path) -> Dict[str, int]:
     return cooler.Cooler(str(path_to_cooler_file)).chromsizes.to_dict()
 
 
-def generate_query_1d(chroms, weights: np.ndarray, mean_length: float, stddev_length: float) -> str:
+def generate_query_1d(
+    chroms, weights: np.ndarray, mean_length: float, stddev_length: float
+) -> str:
     chrom_name, chrom_size = random.choices(chroms, weights=weights, k=1)[0]
 
     query_length = max(2.0, random.gauss(mu=mean_length, sigma=stddev_length))
@@ -130,7 +153,11 @@ def generate_query_1d(chroms, weights: np.ndarray, mean_length: float, stddev_le
 
 
 def generate_query_2d(
-    chroms, weights: np.ndarray, ranks: Dict[str, int], mean_length: float, stddev_length: float
+    chroms,
+    weights: np.ndarray,
+    ranks: Dict[str, int],
+    mean_length: float,
+    stddev_length: float,
 ) -> Tuple[str, str]:
     q1 = generate_query_1d(chroms, weights, mean_length, stddev_length)
     q2 = generate_query_1d(chroms, weights, mean_length, stddev_length)
@@ -210,20 +237,32 @@ def worker(
         weights = chrom_sizes / chrom_sizes.sum()
 
         resolution = cooler.Cooler(str(path_to_cooler)).binsize
-        sel = cooler.Cooler(str(path_to_cooler)).matrix(balance=False, as_pixels=True, join=True)
+        sel = cooler.Cooler(str(path_to_cooler)).matrix(
+            balance=False, as_pixels=True, join=True
+        )
 
         while time.time() < end_time:
             if early_return.value:
-                logging.debug("[%d] early return signal received. Returning immediately!", worker_id)
+                logging.debug(
+                    "[%d] early return signal received. Returning immediately!",
+                    worker_id,
+                )
                 break
 
             if _1d_to_2d_query_ratio <= random.random():
                 q1, q2 = generate_query_2d(
-                    chroms_flat, weights, chrom_ranks, mean_length=query_length_mu, stddev_length=query_length_std
+                    chroms_flat,
+                    weights,
+                    chrom_ranks,
+                    mean_length=query_length_mu,
+                    stddev_length=query_length_std,
                 )
             else:
                 q1 = generate_query_1d(
-                    chroms_flat, weights, mean_length=query_length_mu, stddev_length=query_length_std
+                    chroms_flat,
+                    weights,
+                    mean_length=query_length_mu,
+                    stddev_length=query_length_std,
                 )
                 q2 = q1
 
@@ -235,7 +274,10 @@ def worker(
                 num_failures += 1
 
     except:
-        logging.debug("[%d] exception raised in worker process. Sending early return signal!", worker_id)
+        logging.debug(
+            "[%d] exception raised in worker process. Sending early return signal!",
+            worker_id,
+        )
         early_return.value = True
         raise
 
@@ -279,7 +321,11 @@ def main():
         lvl = logging.WARN
 
     logging.log(
-        lvl, "Score: %.4g%% (%d successes and %d failures).", 100 * num_passes / num_queries, num_passes, num_failures
+        lvl,
+        "Score: %.4g%% (%d successes and %d failures).",
+        100 * num_passes / num_queries,
+        num_passes,
+        num_failures,
     )
 
     return num_failures != 0

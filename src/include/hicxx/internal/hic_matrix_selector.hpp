@@ -38,13 +38,13 @@ class MatrixSelector {
    public:
     MatrixSelector() = delete;
     MatrixSelector(std::shared_ptr<HiCFileStream> fs, std::shared_ptr<const HiCFooter> footer,
-                   std::size_t blockCacheCapacity);
+                   std::size_t block_cache_capacity);
 
     [[nodiscard]] const chromosome &chrom1() const noexcept;
     [[nodiscard]] const chromosome &chrom2() const noexcept;
 
     [[nodiscard]] std::int64_t resolution() const noexcept;
-    [[nodiscard]] MatrixType matrixType() const noexcept;
+    [[nodiscard]] MatrixType matrix_type() const noexcept;
     [[nodiscard]] NormalizationMethod normalizationMethod() const noexcept;
     [[nodiscard]] MatrixUnit matrixUnit() const noexcept;
 

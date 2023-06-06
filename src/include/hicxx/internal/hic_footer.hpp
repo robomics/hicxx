@@ -13,7 +13,7 @@
 namespace hicxx::internal {
 struct HiCFooterMetadata {
     std::string url{};
-    MatrixType matrixType{MatrixType::observed};
+    MatrixType matrix_type{MatrixType::observed};
     NormalizationMethod normalization{NormalizationMethod::NONE};
     MatrixUnit unit{MatrixUnit::BP};
     std::int32_t resolution{-1};
@@ -44,7 +44,7 @@ class HiCFooter {
     [[nodiscard]] constexpr HiCFooterMetadata &metadata() noexcept;
 
     [[nodiscard]] constexpr const std::string &url() const noexcept;
-    [[nodiscard]] constexpr MatrixType matrixType() const noexcept;
+    [[nodiscard]] constexpr MatrixType matrix_type() const noexcept;
     [[nodiscard]] constexpr NormalizationMethod normalization() const noexcept;
     [[nodiscard]] constexpr MatrixUnit unit() const noexcept;
     [[nodiscard]] constexpr std::int64_t resolution() const noexcept;

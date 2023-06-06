@@ -211,7 +211,7 @@ inline const char *hicxxZError(int status) {
 
 inline auto HiCFileStream::init_decompressor() -> Decompressor {
     Decompressor zs(libdeflate_alloc_decompressor(),
-                              [](auto *ptr) { libdeflate_free_decompressor(ptr); });
+                    [](auto *ptr) { libdeflate_free_decompressor(ptr); });
     if (!zs) {
         throw std::runtime_error("failed to initialize zlib decompression stream");
     }
@@ -239,9 +239,9 @@ inline void HiCFileStream::readBlockMap(std::int64_t fileOffset,
         const auto foundUnit = readMatrixUnit();
         std::ignore = _fs->read<std::int32_t>();  // oldIndex
         const auto sumCount = _fs->read<float>();
-        std::ignore = _fs->read<float>();         // occupiedCellCount
-        std::ignore = _fs->read<float>();         // stdDev
-        std::ignore = _fs->read<float>();         // percent95
+        std::ignore = _fs->read<float>();  // occupiedCellCount
+        std::ignore = _fs->read<float>();  // stdDev
+        std::ignore = _fs->read<float>();  // percent95
 
         const auto foundResolution = static_cast<std::int64_t>(_fs->read<std::int32_t>());
         const auto blockBinCount = _fs->read<std::int32_t>();
@@ -400,12 +400,13 @@ inline bool HiCFileStream::checkMagicString(std::string url) noexcept {
     }
 }
 
-inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const std::int32_t chromId2,
+inline HiCFooter HiCFileStream::readFooter(const std::int32_t chrom1_id,
+                                           const std::int32_t chrom2_id,
                                            const MatrixType wantedMatrixType,
                                            const NormalizationMethod wantedNorm,
                                            const MatrixUnit wantedUnit,
                                            const std::int32_t wantedResolution) {
-    assert(chromId1 <= chromId2);
+    assert(chrom1_id <= chrom2_id);
     assert(std::find(_header->resolutions.begin(), _header->resolutions.end(), wantedResolution) !=
            _header->resolutions.end());
 
@@ -419,8 +420,8 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
                           wantedNorm,
                           wantedUnit,
                           wantedResolution,
-                          _header->getChromosome(chromId1),
-                          _header->getChromosome(chromId2)}
+                          _header->getChromosome(chrom1_id),
+                          _header->getChromosome(chrom2_id)}
         };
     // clang-format on
 
@@ -429,7 +430,7 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
     auto &c1Norm = footer.c1Norm();
     auto &c2Norm = footer.c2Norm();
 
-    const auto key = std::to_string(chromId1) + "_" + std::to_string(chromId2);
+    const auto key = std::to_string(chrom1_id) + "_" + std::to_string(chrom2_id);
 
     _fs->seekg(masterOffset());
     std::ignore = readNValues();  // nBytes
@@ -447,13 +448,13 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
         throw std::runtime_error(fmt::format(
             FMT_STRING(
                 "unable to find interactions for {}:{} at {} ({}): unable to read file offset"),
-            _header->getChromosome(chromId1).name, _header->getChromosome(chromId2).name,
+            _header->getChromosome(chrom1_id).name, _header->getChromosome(chrom2_id).name,
             wantedResolution, wantedUnit));
     }
 
     if ((wantedMatrixType == MT::observed && wantedNorm == NM::NONE) ||
         ((wantedMatrixType == MT::oe || wantedMatrixType == MT::expected) &&
-         wantedNorm == NM::NONE && chromId1 != chromId2)) {
+         wantedNorm == NM::NONE && chrom1_id != chrom2_id)) {
         return footer;  // no need to read wantedNorm vector index
     }
 
@@ -465,29 +466,30 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
         const auto foundResolution = _fs->read<std::int32_t>();
         const auto nValues = readNValues();
 
-        bool store = chromId1 == chromId2 &&
+        bool store = chrom1_id == chrom2_id &&
                      (wantedMatrixType == MT::oe || wantedMatrixType == MT::expected) &&
                      wantedNorm == NM::NONE && foundUnit == wantedUnit &&
                      foundResolution == wantedResolution;
 
         if (store) {
             expectedValues = readExpectedVector(nValues);
-            const auto normFactors = readNormalizationFactors(chromId1);
+            const auto normFactors = readNormalizationFactors(chrom1_id);
             applyNormalizationFactors(expectedValues, normFactors);
 
         } else {
             discardExpectedVector(nValues);
-            discardNormalizationFactors(chromId1);
+            discardNormalizationFactors(chrom1_id);
         }
     }
 
-    if (chromId1 == chromId2 && (wantedMatrixType == MT::oe || wantedMatrixType == MT::expected) &&
+    if (chrom1_id == chrom2_id &&
+        (wantedMatrixType == MT::oe || wantedMatrixType == MT::expected) &&
         wantedNorm == NM::NONE) {
         if (expectedValues.empty()) {
             throw std::runtime_error(
                 fmt::format(FMT_STRING("unable to find expected values for {}:{} at {} ({})"),
-                            _header->getChromosome(chromId1).name,
-                            _header->getChromosome(chromId2).name, wantedResolution, wantedUnit));
+                            _header->getChromosome(chrom1_id).name,
+                            _header->getChromosome(chrom2_id).name, wantedResolution, wantedUnit));
         }
         return footer;
     }
@@ -499,28 +501,29 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
         const auto foundResolution = _fs->read<std::int32_t>();
 
         const auto nValues = readNValues();
-        bool store = chromId1 == chromId2 &&
+        bool store = chrom1_id == chrom2_id &&
                      (wantedMatrixType == MT::oe || wantedMatrixType == MT::expected) &&
                      foundNorm == wantedNorm && foundUnit == wantedUnit &&
                      foundResolution == wantedResolution;
 
         if (store) {
             expectedValues = readExpectedVector(nValues);
-            const auto normFactors = readNormalizationFactors(chromId1);
+            const auto normFactors = readNormalizationFactors(chrom1_id);
             applyNormalizationFactors(expectedValues, normFactors);
         } else {
             discardExpectedVector(nValues);
-            discardNormalizationFactors(chromId1);
+            discardNormalizationFactors(chrom1_id);
         }
     }
 
-    if (chromId1 == chromId2 && (wantedMatrixType == MT::oe || wantedMatrixType == MT::expected) &&
+    if (chrom1_id == chrom2_id &&
+        (wantedMatrixType == MT::oe || wantedMatrixType == MT::expected) &&
         wantedNorm != NM::NONE) {
         if (expectedValues.empty()) {
             throw std::runtime_error(fmt::format(
                 FMT_STRING("unable to find expected values normalization factors for {}:{} at "
                            "{} ({})"),
-                _header->getChromosome(chromId1).name, _header->getChromosome(chromId2).name,
+                _header->getChromosome(chrom1_id).name, _header->getChromosome(chrom2_id).name,
                 wantedResolution, wantedUnit));
         }
     }
@@ -537,7 +540,7 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
         const auto sizeInBytes = version() > 8
                                      ? _fs->read<std::int64_t>()
                                      : static_cast<std::int64_t>(_fs->read<std::int32_t>());
-        if (foundChrom == chromId1 && foundNorm == wantedNorm && foundUnit == wantedUnit &&
+        if (foundChrom == chrom1_id && foundNorm == wantedNorm && foundUnit == wantedUnit &&
             foundResolution == wantedResolution) {
             const auto numBins = static_cast<std::size_t>(
                 (footer.chrom1().length + wantedResolution - 1) / wantedResolution);
@@ -545,7 +548,7 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
             c1Norm = readNormalizationVector(indexEntry{filePosition, sizeInBytes}, numBins);
             _fs->seekg(currentPos);
         }
-        if (chromId1 != chromId2 && foundChrom == chromId2 && foundNorm == wantedNorm &&
+        if (chrom1_id != chrom2_id && foundChrom == chrom2_id && foundNorm == wantedNorm &&
             foundUnit == wantedUnit && foundResolution == wantedResolution) {
             const auto numBins = static_cast<std::size_t>(
                 (footer.chrom2().length + wantedResolution - 1) / wantedResolution);
@@ -558,15 +561,15 @@ inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const st
     if (footer.c1Norm().empty() && footer.c2Norm().empty()) {
         throw std::runtime_error(
             fmt::format(FMT_STRING("unable to find {} normalization vectors for {}:{} at {} ({})"),
-                        wantedNorm, _header->getChromosome(chromId1).name,
-                        _header->getChromosome(chromId2).name, wantedResolution, wantedUnit));
+                        wantedNorm, _header->getChromosome(chrom1_id).name,
+                        _header->getChromosome(chrom2_id).name, wantedResolution, wantedUnit));
     }
 
     if (footer.c1Norm().empty() || footer.c2Norm().empty()) {
-        const auto chromId = footer.c1Norm().empty() ? chromId1 : chromId2;
+        const auto chrom_id = footer.c1Norm().empty() ? chrom1_id : chrom2_id;
         throw std::runtime_error(fmt::format(
             FMT_STRING("unable to find {} normalization vector for {} at {} ({})"), wantedNorm,
-            _header->getChromosome(chromId).name, wantedResolution, wantedUnit));
+            _header->getChromosome(chrom_id).name, wantedResolution, wantedUnit));
     }
 
     return footer;

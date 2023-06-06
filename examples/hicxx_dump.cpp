@@ -34,10 +34,10 @@ int main(int argc, char** argv) noexcept {
             return 1;
         }
 
-        auto matrixType = MatrixType::observed;
+        auto matrix_type = MatrixType::observed;
         auto* args = argv + 1;
         if (argc == 8) {
-            matrixType = ParseMatrixTypeStr(*args++);
+            matrix_type = ParseMatrixTypeStr(*args++);
         }
         const auto norm = ParseNormStr(*args++);
         const std::string url(*args++);
@@ -55,8 +55,8 @@ int main(int argc, char** argv) noexcept {
             coord2.end = getChromSize(hic, coord2.chrom);
         }
 
-        auto selector =
-            hic.getMatrixSelector(coord1.chrom, coord2.chrom, matrixType, norm, unit, resolution);
+        auto selector = hic.get_matrix_selector(coord1.chrom, coord2.chrom, matrix_type, norm, unit,
+                                                resolution);
         std::vector<contactRecord> buffer{};
         selector.fetch(coord1.start, coord1.end, coord2.start, coord2.end, buffer);
         std::sort(buffer.begin(), buffer.end());
