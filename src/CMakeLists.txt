@@ -23,7 +23,6 @@ find_package(
 
 find_package(
     fmt
-    9.1
     CONFIG
     QUIET
     REQUIRED)
