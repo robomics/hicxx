@@ -5,8 +5,8 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 #include <memory>
-#include <set>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -72,6 +72,12 @@ class HiCFile {
         std::int32_t chromId1, std::int32_t chromId2, MatrixType matrixType,
         NormalizationMethod norm, MatrixUnit unit, std::int32_t resolution);
 };
+
+namespace utils {
+[[nodiscard]] bool is_hic_file(const std::filesystem::path &path);
+}  // namespace utils
+
 }  // namespace hicxx
 
 #include "../../hic_file_impl.hpp"
+#include "../../hic_file_utils_impl.hpp"

@@ -391,6 +391,15 @@ inline void HiCFileStream::readAndInflate(indexEntry idx, std::string &plainText
     }
 }
 
+inline bool HiCFileStream::checkMagicString(std::string url) noexcept {
+    try {
+        filestream::FileStream fs(HiCFileStream::openStream(std::move(url)));
+        return HiCFileStream::checkMagicString(fs);
+    } catch (...) {
+        return false;
+    }
+}
+
 inline HiCFooter HiCFileStream::readFooter(const std::int32_t chromId1, const std::int32_t chromId2,
                                            const MatrixType wantedMatrixType,
                                            const NormalizationMethod wantedNorm,

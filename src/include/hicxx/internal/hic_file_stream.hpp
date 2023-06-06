@@ -59,6 +59,8 @@ class HiCFileStream {
                       MatrixUnit wantedUnit, std::int64_t wantedResolution, BlockMap &buffer);
     void readAndInflate(indexEntry idx, std::string &plainTextBuffer);
 
+    [[nodiscard]] static bool checkMagicString(std::string url) noexcept;
+
    private:
     [[nodiscard]] static filestream::FileStream openStream(std::string url);
     // reads the header, storing the positions of the normalization vectors and returning the

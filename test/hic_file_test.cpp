@@ -13,6 +13,13 @@ using namespace hicxx;
 constexpr auto* pathV8 = "test/data/4DNFIZ1ZVXC8.hic8";
 [[maybe_unused]] constexpr auto* urlV8 =
     "https://www.dropbox.com/s/zt62d0d3fhbkha0/4DNFIZ1ZVXC8.hic8?dl=1";
+constexpr auto* path_binary = "test/data/data.zip";
+
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+TEST_CASE("utils: is_hic_file") {
+    CHECK(utils::is_hic_file(pathV8));
+    CHECK_FALSE(utils::is_hic_file(path_binary));
+}
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("HiCFile accessors") {
