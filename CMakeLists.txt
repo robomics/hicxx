@@ -122,6 +122,7 @@ option(HICXX_BUILD_EXAMPLES "Build examples" ON)
 add_subdirectory(src)
 
 if(HICXX_ENABLE_TESTING)
+    include(cmake/FetchTestDatasets.cmake)
     enable_testing()
     message("-- Building unit tests.")
     target_compile_definitions(hicxx_project_options INTERFACE HICXX_ENABLE_TESTING)
