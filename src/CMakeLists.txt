@@ -7,11 +7,6 @@ add_library(hicxx INTERFACE)
 include(FetchContent)
 
 FetchContent_Declare(
-    fmt
-    GIT_REPOSITORY https://github.com/fmtlib/fmt
-    GIT_TAG 9.1.0)
-
-FetchContent_Declare(
     tsl-ordered-map
     GIT_REPOSITORY https://github.com/Tessil/ordered-map
     GIT_TAG v1.1.0)
@@ -30,10 +25,8 @@ find_package(
     fmt
     9.1
     CONFIG
-    QUIET)
-if(NOT fmt_FOUND)
-    FetchContent_MakeAvailable(fmt)
-endif()
+    QUIET
+    REQUIRED)
 
 find_package(
     tsl-ordered-map
@@ -50,6 +43,7 @@ target_sources(
               ${CMAKE_CURRENT_SOURCE_DIR}/file_stream_impl.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/hic_file_impl.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/hic_file_stream_impl.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/hic_file_utils_impl.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/hic_footer_impl.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/hic_header_impl.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/hic_matrix_selector_impl.hpp

@@ -4,12 +4,6 @@
 
 #pragma once
 
-#ifdef HICXX_USE_ZLIBNG
-#include <zlib-ng.h>
-#else
-#include <zlib.h>
-#endif
-
 #include <fmt/format.h>
 
 #include <algorithm>
@@ -199,14 +193,6 @@ inline bool HiCFileStream::checkMagicString(filestream::FileStream &fs) {
 
 inline std::int64_t HiCFileStream::masterOffset() const noexcept {
     return _header->masterIndexOffset;
-}
-
-inline const char *hicxxZError(int status) {
-#ifdef HICXX_USE_ZLIBNG
-    return zng_zError(status);
-#else
-    return zError(status);
-#endif
 }
 
 inline auto HiCFileStream::init_decompressor() -> Decompressor {
