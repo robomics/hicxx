@@ -1,0 +1,299 @@
+# Copyright (C) 2023 Roberto Rossini (roberros@uio.no)
+# SPDX-License-Identifier: MIT
+
+name: Run fuzzy tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/fuzzy-testing.yml"
+      - "cmake/**"
+      - "examples/**"
+      - "src/**"
+      - "test/scripts/fuzzy_test.py"
+      - "CMakeLists.txt"
+      - "conanfile.txt"
+    tags:
+      - 'v*.*.*'
+
+  pull_request:
+    paths:
+      - ".github/workflows/fuzzy-testing.yml"
+      - "cmake/**"
+      - "examples/**"
+      - "src/**"
+      - "test/scripts/fuzzy_test.py"
+      - "CMakeLists.txt"
+      - "conanfile.txt"
+
+  schedule:
+    # Run weekly
+    - cron: '15 3 * * 0'
+
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: 'Test duration in seconds'
+        required: true
+        default: '600'
+        type: string
+
+      resolution:
+        description: 'Matrix resolution (bp)'
+        required: true
+        default: '5000'
+        type: string
+
+
+# https://stackoverflow.com/a/72408109
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  TEST_DATASET_URL: 'https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/a95ec207-0552-40fe-9496-6a9a9b619bec/4DNFI6HG4GP3.hic'
+  TEST_DATASET_SHA256: '3e4b749440a16d73a7aa3d9ab28083818fa7fa435f7ccc2cc9d8516eb82a84f7'
+
+jobs:
+  fetch-test-dataset:
+    name: Fetch test dataset
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.collect-metadata.outputs.key }}
+      path: ${{ steps.collect-metadata.outputs.path }}
+
+    steps:
+      - name: Collect metadata
+        id: collect-metadata
+        run: |
+          key="test-dataset-$TEST_DATASET_SHA256"
+          path="test/data/$(basename "$TEST_DATASET_URL")"
+
+          echo "key=$key" >> $GITHUB_OUTPUT
+          echo "path=$path" >> "$GITHUB_OUTPUT"
+
+      - name: Check test dataset is already cached
+        id: check-cache
+        uses: actions/cache@v3
+        with:
+          lookup-only: true
+          key: ${{ steps.collect-metadata.outputs.key }}
+          path: test/data/
+
+      - name: Cache test datasets
+        uses: actions/cache@v3
+        if: steps.check-cache.outputs.cache-hit != 'true'
+        with:
+          key: ${{ steps.collect-metadata.outputs.key }}
+          path: test/data/
+
+      - uses: actions/checkout@v3
+        if: steps.check-cache.outputs.cache-hit != 'true'
+
+      - name: Download test dataset
+        if: steps.check-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p test/data
+          cd test/data
+          curl -LO "$TEST_DATASET_URL"
+
+      - name: Checksum test dataset
+        if: steps.check-cache.outputs.cache-hit != 'true'
+        run: |
+          echo "$TEST_DATASET_SHA256  test/data/$(basename "$TEST_DATASET_URL")" > checksum.sha256
+          shasum -c checksum.sha256
+
+
+  build-project:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-15
+      options: "--user=root"
+
+    env:
+      CONAN_HOME: '/root/.conan2'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fix permissions
+        run: |
+          chown -R $(id -u):$(id -g) $PWD
+
+      - name: Generate cache key
+        id: cache-key
+        run: |
+          hash="${{ hashFiles('conanfile.txt', '.github/workflows/fuzzy-testing.yml') }}"
+
+          echo "key=fuzzy-testing-$hash" >> $GITHUB_OUTPUT
+
+      - name: Restore Conan cache
+        id: cache-conan
+        uses: actions/cache/restore@v3
+        with:
+          key: conan-${{ steps.cache-key.outputs.key }}
+          path: ${{ env.CONAN_HOME }}
+
+      - name: Clean Conan cache (pre-build)
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        run: |
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
+          conan remove --confirm "*"
+
+      - name: Install build dependencies
+        run: |
+          conan install .                             \
+             --build=missing                          \
+             -pr:b="$CONAN_DEFAULT_PROFILE_PATH"      \
+             -pr:h="$CONAN_DEFAULT_PROFILE_PATH"      \
+             -s build_type=Release                    \
+             -s compiler.libcxx=libstdc++11           \
+             -s compiler.cppstd=17                    \
+             --output-folder=build
+
+      - name: Clean Conan cache (post-build)
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        run: |
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
+
+      - name: Save Conan cache
+        uses: actions/cache/save@v3
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        with:
+          key: conan-${{ steps.cache-key.outputs.key }}
+          path: ${{ env.CONAN_HOME }}
+
+      - name: Configure project
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=Release                   \
+                -DCMAKE_PREFIX_PATH="$PWD/build"             \
+                -DENABLE_DEVELOPER_MODE=ON                   \
+                -DOPT_ENABLE_SANITIZER_ADDRESS=ON            \
+                -DOPT_ENABLE_SANITIZER_LEAK=ON               \
+                -DOPT_ENABLE_SANITIZER_UNDEFINED_BEHAVIOR=ON \
+                -DOPT_ENABLE_CLANG_TIDY=OFF                  \
+                -DHICXX_BUILD_EXAMPLES=ON                    \
+                -DHICXX_ENABLE_TESTING=OFF                   \
+                -S .                                         \
+                -B build
+
+      - name: Build project
+        run: cmake --build build -j $(nproc)
+
+      - name: Upload hicxx_dump
+        uses: actions/upload-artifact@v3
+        with:
+          name: hicxx-dump-fuzzy-testing
+          path: build/examples/hicxx_dump
+          if-no-files-found: error
+          retention-days: 1
+
+  run-tests:
+    runs-on: ubuntu-latest
+    needs: [ build-project, fetch-test-dataset ]
+    container:
+      image: ubuntu:22.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        balance: [ 'NONE', 'VC', 'KR' ]
+
+    steps:
+      - name: Install test dependencies
+        run: |
+          apt-get update
+          apt-get install -y git libcurl4-openssl-dev python3-pip zstd
+          pip3 install 'hic-straw==1.3.1' 'pandas<2'
+
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.after }}
+
+      - name: Fix permissions
+        run: |
+          chown -R $(id -u):$(id -g) $PWD
+
+      - name: Detect CI type
+        id: ci-type
+        run: |
+          if git log --format=%B -n 1 ${{ github.event.after }} | grep -qF '[ci full]'; then
+            echo "type=full" >> $GITHUB_OUTPUT
+          else
+            echo "type=short" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download hicxx_dump
+        uses: actions/download-artifact@v3
+        with:
+          name: hicxx-dump-fuzzy-testing
+
+      - name: Cache test dataset
+        uses: actions/cache@v3
+        with:
+          key: ${{ needs.fetch-test-dataset.outputs.cache-key }}
+          fail-on-cache-miss: true
+          path: test/data/
+
+      - name: Prepare for test
+        id: test-params
+        env:
+          PYTHONHASHSEED: 0
+        run: |
+          seed="$(python3 -c 'import random; print(random.randint(0, 2**32))')"
+
+          duration=600
+          resolution=5000
+          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
+            duration='${{ inputs.duration }}'
+            resolution='${{ inputs.resolution }}'
+          elif [[ ${{ steps.ci-type.outputs.type }} == 'full' ]]; then
+            duration=3600
+          fi
+
+          2>&1 echo "Seed: ${seed}"
+          2>&1 echo "Duration: ${duration}"
+          2>&1 echo "Resolution: ${resolution}"
+
+          echo "seed=$seed" >> $GITHUB_OUTPUT
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+          echo "resolution=$resolution" >> $GITHUB_OUTPUT
+
+      - name: Run test
+        run: |
+          chmod 755 hicxx_dump
+          hicxx_dump="$(readlink -f ./hicxx_dump)"
+
+          test/scripts/fuzzy_test.py \
+            --path-to-hicxx-dump="$hicxx_dump" \
+            --seed '${{ steps.test-params.outputs.seed }}' \
+            --duration '${{ steps.test-params.outputs.duration }}' \
+            --resolution '${{ steps.test-params.outputs.resolution }}' \
+            --balance ${{ matrix.balance }} \
+            "${{ needs.fetch-test-dataset.outputs.path }}"
+
+  fuzzy-testing-status-check:
+    name: Status Check (fuzzy-testing)
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    needs:
+      - fetch-test-dataset
+      - build-project
+      - run-tests
+
+    steps:
+      - name: Collect job results
+        if: |
+          needs.fetch-test-dataset.result != 'success' ||
+          needs.build-project.result != 'success'        ||
+          needs.run-tests.result != 'success'
+        run: exit 1
