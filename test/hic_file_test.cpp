@@ -137,6 +137,13 @@ TEST_CASE("HiCFile get_matrix_selector") {
         CHECK(sel.chrom2() == chrom2);
     }
 
+    SECTION("valid, but empty matrix") {
+        auto sel = f.get_matrix_selector("chrM", mt, norm, unit, res);
+        std::vector<contactRecord> buff{};
+        sel.fetch(buff);
+        CHECK(buff.empty());
+    }
+
     SECTION("invalid chromosome") {
         CHECK_THROWS(f.get_matrix_selector("not-a-chromosome", mt, norm, unit, res));
         CHECK_THROWS(f.get_matrix_selector(chrom1.name, "not-a-chromosome", mt, norm, unit, res));

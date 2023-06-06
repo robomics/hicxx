@@ -129,6 +129,12 @@ inline void MatrixSelector::fetch(std::int64_t start1, std::int64_t end1, std::i
             chrom2().name, start2, end2, chrom2().length));
     }
 
+    // Query is valid but returns no pixels
+    if (this->_footer->fileOffset() == -1) {
+        assert(this->_blockMap.blocks.empty());
+        return;
+    }
+
     const auto is_intra = isIntra();
     if (is_intra && start1 > start2) {
         std::swap(start1, start2);
@@ -433,6 +439,11 @@ inline void MatrixSelector::readBlockOfInteractionsType2(
 }
 
 inline BlockMap MatrixSelector::readBlockMap(HiCFileStream &fs, const HiCFooter &footer) {
+    if (footer.fileOffset() == -1) {
+        // Footer does not exist. However, query validity is assessed elswehere
+        return {};
+    }
+
     BlockMap buffer{};
     fs.readBlockMap(footer.fileOffset(), footer.chrom1(), footer.chrom2(), footer.unit(),
                     footer.resolution(), buffer);
