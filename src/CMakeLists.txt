@@ -2,39 +2,19 @@
 #
 # SPDX-License-Identifier: MIT
 
-add_library(hicxx INTERFACE)
-
-include(FetchContent)
-
-FetchContent_Declare(
-    tsl-ordered-map
-    GIT_REPOSITORY https://github.com/Tessil/ordered-map
-    GIT_TAG v1.1.0)
-
 if(HICXX_USE_CURL)
-    find_package(CURL CONFIG REQUIRED)
+    find_package(CURL REQUIRED)
 endif()
 
-find_package(
-    libdeflate
-    CONFIG
-    QUIET
-    REQUIRED)
+find_package(libdeflate QUIET REQUIRED)
 
-find_package(
-    fmt
-    CONFIG
-    QUIET
-    REQUIRED)
+find_package(fmt QUIET REQUIRED)
 
-find_package(
-    tsl-ordered-map
-    1.1
-    CONFIG
-    QUIET)
-if(NOT tsl-ordered-map_FOUND)
-    FetchContent_MakeAvailable(tsl-ordered-map)
-endif()
+find_package(Filesystem REQUIRED)
+
+find_package(tsl-ordered-map QUIET REQUIRED)
+
+add_library(hicxx INTERFACE)
 
 target_sources(
     hicxx
@@ -64,6 +44,7 @@ target_link_libraries(
               $<$<BOOL:${HICXX_USE_CURL}>:CURL::libcurl>
               fmt::fmt
               libdeflate::libdeflate
-              tsl::ordered_map)
+              tsl::ordered_map
+              std::filesystem)
 
 target_compile_definitions(hicxx INTERFACE FMT_ENFORCE_COMPILE_STRING $<$<BOOL:${HICXX_USE_CURL}>:HICXX_USE_CURL>)
