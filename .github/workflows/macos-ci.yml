@@ -14,7 +14,7 @@ on:
       - "src/**"
       - "test/**"
       - "CMakeLists.txt"
-      - "conanfile.py"
+      - "conanfile.txt"
     tags:
       - 'v*.*.*'
 
@@ -27,7 +27,7 @@ on:
       - "src/**"
       - "test/**"
       - "CMakeLists.txt"
-      - "conanfile.py"
+      - "conanfile.txt"
 
 # https://stackoverflow.com/a/72408109
 concurrency:
@@ -48,9 +48,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { compiler-name: clang, compiler-version: 13, os: 'macos-11', conan-ver: '2.0.*', cmake-ver: '3.26.*', build_type: Release }
-          - { compiler-name: clang, compiler-version: 14, os: 'macos-12', conan-ver: '2.0.*', cmake-ver: '3.26.*', build_type: Release }
-          - { compiler-name: clang, compiler-version: 14, os: 'macos-12', conan-ver: '2.0.*', cmake-ver: '3.26.*', build_type: Debug   }
+          - { compiler-name: clang, compiler-version: 13, os: 'macos-11',    conan-ver: '2.0.*', cmake-ver: '3.26.*', build_type: Release, developer_mode: OFF }
+          - { compiler-name: clang, compiler-version: 14, os: 'macos-12',    conan-ver: '2.0.*', cmake-ver: '3.26.*', build_type: Release, developer_mode: OFF }
+          - { compiler-name: clang, compiler-version: 14, os: 'macos-13',    conan-ver: '2.0.*', cmake-ver: '3.26.*', build_type: Release, developer_mode: OFF }
+          - { compiler-name: clang, compiler-version: 14, os: 'macos-13',    conan-ver: '2.0.*', cmake-ver: '3.26.*', build_type: Debug,   developer_mode: OFF }
 
     steps:
       - uses: actions/checkout@v3
@@ -88,9 +89,9 @@ jobs:
 
           echo "key=$os-$compiler-$hash-$build_type" >> $GITHUB_OUTPUT
 
-      - name: Cache Conan packages
+      - name: Restore Conan cache
         id: cache-conan
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         with:
           key: conan-${{ steps.cache-key.outputs.key }}
           path: ${{ env.CONAN_HOME }}
@@ -128,12 +129,22 @@ jobs:
           conan cache clean "*" --download
           conan cache clean "*" --source
 
+      - name: Save Conan cache
+        uses: actions/cache/save@v3
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        with:
+          key: conan-${{ steps.cache-key.outputs.key }}
+          path: ${{ env.CONAN_HOME }}
+
       - name: Configure project
         run: |
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}          \
-                -DCMAKE_PREFIX_PATH="${{ github.workspace }}/build/" \
+                -DCMAKE_PREFIX_PATH="${{ github.workspace }}/build"  \
+                -DENABLE_DEVELOPER_MODE=${{ matrix.developer_mode }} \
                 -DHICXX_ENABLE_TESTING=ON                            \
                 -DHICXX_BUILD_EXAMPLES=ON                            \
+                -DOPT_ENABLE_CLANG_TIDY=OFF                          \
+                -DOPT_ENABLE_CPPCHECK=OFF                            \
                 -S "${{ github.workspace }}"                         \
                 -B "${{ github.workspace }}/build"
 
