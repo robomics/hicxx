@@ -223,7 +223,7 @@ def generate_query_2d(
 
 
 def find_differences(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
-    df = df1.merge(df2, how="outer", left_index=True, right_index=True, suffixes=("1", "2"))
+    df = df1.merge(df2, how="outer", left_index=True, right_index=True, suffixes=("1", "2"), sort=False)
     # We're mapping False to None so that we can more easily drop identical rows with dropna()
     df["count_close_enough"] = pd.Series(np.isclose(df["count1"], df["count2"])).map({False: None})
 
