@@ -14,7 +14,7 @@ on:
       - "src/**"
       - "test/**"
       - "CMakeLists.txt"
-      - "conanfile.py"
+      - "conanfile.txt"
     tags:
       - 'v*.*.*'
 
@@ -27,7 +27,7 @@ on:
       - "src/**"
       - "test/**"
       - "CMakeLists.txt"
-      - "conanfile.py"
+      - "conanfile.txt"
 
 # https://stackoverflow.com/a/72408109
 concurrency:
@@ -92,6 +92,16 @@ jobs:
              -s compiler.cppstd=17   \
              --output-folder=build
 
+      - name: Configure project
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=Release       \
+                -DCMAKE_PREFIX_PATH="$PWD/build" \
+                -DENABLE_DEVELOPER_MODE=OFF      \
+                -DHICXX_ENABLE_TESTING=ON        \
+                -DHICXX_BUILD_EXAMPLES=ON        \
+                -S .                             \
+                -B build
+
       - name: Clean Conan cache (post-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
@@ -99,21 +109,14 @@ jobs:
           conan cache clean "*" --download
           conan cache clean "*" --source
 
-      - name: Configure project
-        run: |
-          cmake -DCMAKE_BUILD_TYPE=Release       \
-                -DCMAKE_PREFIX_PATH="$PWD/build" \
-                -DHICXX_ENABLE_TESTING=ON        \
-                -DHICXX_BUILD_EXAMPLES=ON        \
-                -S "$PWD"                        \
-                -B "$PWD/build"
-
       - name: Build project
         run: cmake --build build --config Release
 
       - name: Run unit tests
         run: |
           ctest --test-dir build    \
+                --schedule-random   \
+                --output-on-failure \
                 --schedule-random   \
                 --no-tests=error    \
                 --timeout 30

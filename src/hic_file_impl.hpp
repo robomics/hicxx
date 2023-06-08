@@ -49,7 +49,6 @@ inline std::shared_ptr<const internal::HiCFooter> HiCFile::get_footer(
     if (it != _footers.end()) {
         return it->second;
     }
-
     auto footer = std::make_shared<const internal::HiCFooter>(
         _fs->readFooter(chrom1_id, chrom2_id, matrix_type, norm, unit, resolution));
     auto node = _footers.emplace(std::move(metadata), std::move(footer));
@@ -141,9 +140,30 @@ inline internal::MatrixSelector HiCFile::get_matrix_selector(
             resolution, fmt::join(_fs->header().resolutions, ", ")));
     }
 
-    return internal::MatrixSelector(
-        _fs, get_footer(chrom1_id, chrom2_id, matrix_type, norm, unit, resolution),
-        block_cache_capacity);
+    try {
+        return internal::MatrixSelector(
+            _fs, get_footer(chrom1_id, chrom2_id, matrix_type, norm, unit, resolution),
+            block_cache_capacity);
+    } catch (const std::exception& e) {
+        // Check whether query is valid but there are no interactions for the given chromosome pair
+        const auto missing_footer =
+            std::string_view{e.what()}.find("unable to read file offset") == std::string_view::npos;
+        if (missing_footer) {
+            throw;
+        }
+
+        internal::HiCFooterMetadata metadata{url(),
+                                             matrix_type,
+                                             norm,
+                                             unit,
+                                             resolution,
+                                             _fs->header().getChromosome(chrom1_id),
+                                             _fs->header().getChromosome(chrom2_id),
+                                             -1};
+
+        return internal::MatrixSelector(
+            _fs, std::make_shared<const internal::HiCFooter>(std::move(metadata)), 1);
+    }
 }
 
 inline std::size_t HiCFile::num_cached_footers() const noexcept { return _footers.size(); }
