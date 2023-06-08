@@ -8,4 +8,4 @@ SPDX-License-Identifier: MIT
 
 This is a rewrite of the [straw](https://github.com/aidenlab/straw) C++ API to read .hic files.
 
-Work in progress.
+Code from this repo is now part of [paulsengroup/hictk](https://github.com/paulsengroup/hictk).
